@@ -1,0 +1,73 @@
+{
+  "$comment": "EXAMPLE ONLY — not a real listing. Shows the storyboard shape the pipeline consumes. Copy to inputs/storyboard.json and point sourcePhoto at real files in inputs/listing-photos to run for real. Rooms here mirror the reference-frame set (modern estate) so the mapping is obvious.",
+  "listingId": "example-modern-estate",
+  "propertySize": "estate",
+  "brand": { "agentName": "Your Brokerage", "primaryColor": "#0e1116", "logo": "" },
+  "musicBed": null,
+  "shots": [
+    {
+      "id": "ext-approach",
+      "room": "Arrival",
+      "sourcePhoto": "inputs/listing-photos/01-exterior.jpg",
+      "motion": { "preset": "push_in", "speed": 0.7, "intensity": 0.45 },
+      "durationSec": 5.0,
+      "framing": { "crop": "reframe_16x9", "compositionPrompt": "symmetrical facade, level horizon, driveway leading line" },
+      "caption": { "text": "Welcome Home", "style": "minimal_lower_third" },
+      "transitionIn": { "type": "hard_cut", "durationSec": 0.0 },
+      "isHero": true
+    },
+    {
+      "id": "foyer-reveal",
+      "room": "Grand Foyer",
+      "sourcePhoto": "inputs/listing-photos/02-foyer.jpg",
+      "motion": { "preset": "reveal", "speed": 0.75, "intensity": 0.5 },
+      "durationSec": 4.0,
+      "framing": { "crop": "reframe_16x9", "compositionPrompt": "staircase as anchor, vertical lines true" },
+      "caption": { "text": "Grand Foyer", "style": "minimal_lower_third" },
+      "transitionIn": { "type": "through_doorway_match", "durationSec": 0.4 }
+    },
+    {
+      "id": "living-orbit",
+      "room": "Great Room",
+      "sourcePhoto": "inputs/listing-photos/03-living.jpg",
+      "motion": { "preset": "orbit_left", "speed": 0.7, "intensity": 0.5 },
+      "durationSec": 4.5,
+      "framing": { "crop": "reframe_hero", "compositionPrompt": "seating group centered, glass railing leading up" },
+      "caption": { "text": "Great Room", "style": "minimal_lower_third" },
+      "transitionIn": { "type": "dissolve", "durationSec": 0.35 },
+      "isHero": true
+    },
+    {
+      "id": "kitchen-island",
+      "room": "Chef’s Kitchen",
+      "sourcePhoto": "inputs/listing-photos/04-kitchen.jpg",
+      "motion": { "preset": "dolly_in", "speed": 0.7, "intensity": 0.5 },
+      "durationSec": 5.0,
+      "framing": { "crop": "reframe_hero", "compositionPrompt": "waterfall island anchors frame, pendants symmetrical" },
+      "caption": { "text": "Chef’s Kitchen", "style": "minimal_lower_third" },
+      "transitionIn": { "type": "hard_cut", "durationSec": 0.0 },
+      "isHero": true
+    },
+    {
+      "id": "primary-bath",
+      "room": "Spa Bath",
+      "sourcePhoto": "inputs/listing-photos/05-bath.jpg",
+      "motion": { "preset": "track_forward", "speed": 0.65, "intensity": 0.45 },
+      "durationSec": 4.0,
+      "framing": { "crop": "reframe_16x9", "compositionPrompt": "double vanity leading to glass shower, marble true white" },
+      "caption": { "text": "Spa Bath", "style": "minimal_lower_third" },
+      "transitionIn": { "type": "through_doorway_match", "durationSec": 0.4 }
+    },
+    {
+      "id": "ext-close",
+      "room": "Farewell",
+      "sourcePhoto": "inputs/listing-photos/06-exterior-dusk.jpg",
+      "motion": { "preset": "pull_back", "speed": 0.7, "intensity": 0.5 },
+      "durationSec": 5.0,
+      "framing": { "crop": "reframe_16x9", "compositionPrompt": "pull back to reveal full facade at dusk" },
+      "caption": { "text": "Schedule a Private Showing", "style": "minimal_lower_third" },
+      "transitionIn": { "type": "dissolve", "durationSec": 0.5 },
+      "isHero": true
+    }
+  ]
+}

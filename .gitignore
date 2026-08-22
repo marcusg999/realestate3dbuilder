@@ -1,0 +1,24 @@
+# Generated working files and renders — never committed
+work/
+output/
+state.json
+progress.html
+
+# Large binary inputs — keep dirs (via .gitkeep) but not the assets themselves
+inputs/reference-frames/*
+inputs/listing-photos/*
+inputs/floorplan/*
+inputs/matterport.url.txt
+inputs/storyboard.json
+!inputs/**/.gitkeep
+
+# Vendored ffmpeg / archives
+vendor/
+*.tar.xz
+
+# Node
+node_modules/
+npm-debug.log*
+
+# OS
+.DS_Store

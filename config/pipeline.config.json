@@ -1,0 +1,42 @@
+{
+  "$comment": "Central paths + defaults for the walkthrough pipeline. ffmpegBin/ffprobeBin resolve in this order: env FFMPEG_BIN/FFPROBE_BIN -> this config -> PATH. Nothing here is generated; edit paths to match your environment.",
+  "ffmpegBin": null,
+  "ffprobeBin": null,
+  "captionFont": "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+  "paths": {
+    "referenceFrames": "inputs/reference-frames",
+    "listingPhotos": "inputs/listing-photos",
+    "floorplan": "inputs/floorplan",
+    "storyboard": "inputs/storyboard.json",
+    "matterportUrlFile": "inputs/matterport.url.txt",
+    "work": "work",
+    "clips": "work/clips",
+    "graded": "work/graded",
+    "compareFrames": "work/compare-frames",
+    "output": "output",
+    "assembledVideo": "output/walkthrough.mp4",
+    "progressPage": "progress.html",
+    "state": "state.json"
+  },
+  "video": {
+    "width": 1920,
+    "height": 1080,
+    "fps": 30,
+    "pixFmt": "yuv420p",
+    "crf": 18,
+    "preset": "medium",
+    "codec": "libx264"
+  },
+  "audio": {
+    "musicBed": null,
+    "musicGainDb": -18,
+    "fadeInSec": 1.0,
+    "fadeOutSec": 2.0
+  },
+  "higgsfield": {
+    "$comment": "Reference values only. Actual generation is invoked via the Higgsfield MCP tools by the orchestrating agent, not by a script. build-shot-plan.js emits one spec object per shot that maps directly onto generate_video inputs.",
+    "videoModelHint": "choose via models_explore(action:'recommend') at run time",
+    "clipSeconds": 5,
+    "aspect": "16:9"
+  }
+}

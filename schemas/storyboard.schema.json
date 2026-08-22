@@ -1,0 +1,70 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://realestate3dbuilder/schemas/storyboard.schema.json",
+  "title": "Approved Walkthrough Storyboard",
+  "description": "The approved storyboard is the input contract for the walkthrough-generation step. It is an ordered list of shots. Each shot names the source listing photo, the room, the camera motion, the duration, and any caption. build-shot-plan.js turns this into Higgsfield generation specs; assemble.js turns the rendered clips back into the final walkthrough in this order.",
+  "type": "object",
+  "required": ["listingId", "propertySize", "shots"],
+  "properties": {
+    "listingId": { "type": "string" },
+    "propertySize": {
+      "type": "string",
+      "enum": ["smallHome", "midHome", "estate"],
+      "description": "Drives target total length in config/pieces.json -> assembly.targetTotalSec."
+    },
+    "brand": {
+      "type": "object",
+      "properties": {
+        "agentName": { "type": "string" },
+        "primaryColor": { "type": "string" },
+        "logo": { "type": "string" }
+      }
+    },
+    "musicBed": { "type": ["string", "null"], "description": "Optional path to a licensed music bed." },
+    "shots": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "room", "sourcePhoto", "motion", "durationSec"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique, e.g. 'ext-approach', 'kitchen-island'." },
+          "room": { "type": "string", "description": "Human room label, e.g. 'Chef’s Kitchen'." },
+          "sourcePhoto": { "type": "string", "description": "Path under inputs/listing-photos." },
+          "motion": {
+            "type": "object",
+            "required": ["preset"],
+            "properties": {
+              "preset": { "type": "string", "description": "One of camera-motion.knobs.motionPreset." },
+              "speed": { "type": "number", "default": 0.8 },
+              "intensity": { "type": "number", "default": 0.5 }
+            }
+          },
+          "durationSec": { "type": "number", "minimum": 1.5, "maximum": 8 },
+          "framing": {
+            "type": "object",
+            "properties": {
+              "crop": { "type": "string", "enum": ["as_shot", "reframe_16x9", "reframe_hero"], "default": "reframe_16x9" },
+              "compositionPrompt": { "type": "string" }
+            }
+          },
+          "caption": {
+            "type": "object",
+            "properties": {
+              "text": { "type": "string" },
+              "style": { "type": "string", "enum": ["minimal_lower_third", "corner_label", "none"], "default": "minimal_lower_third" }
+            }
+          },
+          "transitionIn": {
+            "type": "object",
+            "properties": {
+              "type": { "type": "string", "enum": ["hard_cut", "dissolve", "whip_pan_match", "through_doorway_match"], "default": "hard_cut" },
+              "durationSec": { "type": "number", "default": 0.35 }
+            }
+          },
+          "isHero": { "type": "boolean", "default": false, "description": "Hero rooms get more time (pacing piece)." }
+        }
+      }
+    }
+  }
+}

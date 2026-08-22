@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Listing Walkthrough Studio — Intake</title>
+<style>
+  :root{color-scheme:light dark;--bg:#0e1116;--card:#171b22;--card2:#1e232c;--fg:#e6e8eb;--mut:#8b93a1;--line:#232833;--acc:#3b82f6;--ok:#059669;--warn:#d97706;--bad:#dc2626}
+  *{box-sizing:border-box}
+  body{margin:0;font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--fg)}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+  h1{font-size:22px;margin:0 0 2px}
+  h3{margin:0 0 12px;font-size:15px}
+  .sub{color:var(--mut);margin:0 0 18px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  .drop{border:2px dashed var(--line);border-radius:10px;padding:16px;text-align:center;transition:.15s;cursor:pointer;background:var(--card2)}
+  .drop.hot{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--card2))}
+  .drop small{color:var(--mut)}
+  .thumbs{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+  .thumb{position:relative;width:72px;height:54px;border-radius:6px;overflow:hidden;border:1px solid var(--line);background:#000}
+  .thumb img{width:100%;height:100%;object-fit:cover}
+  .thumb .x{position:absolute;top:1px;right:1px;background:rgba(0,0,0,.6);color:#fff;border:0;border-radius:4px;font-size:11px;cursor:pointer;line-height:1;padding:2px 4px}
+  .thumb .pdf{display:flex;align-items:center;justify-content:center;height:100%;color:var(--mut);font-size:11px}
+  input[type=text],textarea{width:100%;background:var(--card2);color:var(--fg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;font:inherit}
+  textarea{font-family:ui-monospace,SFMono-Regular,monospace;font-size:12.5px;min-height:220px;white-space:pre;resize:vertical}
+  button{background:var(--acc);color:#fff;border:0;border-radius:8px;padding:8px 14px;font:inherit;font-weight:600;cursor:pointer}
+  button.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  ul.pf{list-style:none;margin:0;padding:0}
+  ul.pf li{padding:6px 0;border-bottom:1px solid var(--line);font-size:14px;display:flex;gap:8px;align-items:flex-start}
+  .pill{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .pill.ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 15%,transparent)}
+  .pill.bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 15%,transparent)}
+  .pill.warn{color:var(--warn);background:color-mix(in srgb,var(--warn) 15%,transparent)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 45%,transparent)}
+  video{width:100%;border-radius:8px;background:#000;aspect-ratio:16/9}
+  pre.log{background:#000;color:#cbd5e1;border-radius:8px;padding:10px;font-size:12px;max-height:180px;overflow:auto;white-space:pre-wrap;margin:8px 0 0}
+  .muted{color:var(--mut)}.mono{font-family:ui-monospace,monospace;font-size:12px}
+  .banner{border-radius:10px;padding:12px 14px;font-weight:600;margin-bottom:6px}
+  .banner.ok{background:color-mix(in srgb,var(--ok) 14%,transparent);border:1px solid color-mix(in srgb,var(--ok) 40%,transparent)}
+  .banner.bad{background:color-mix(in srgb,var(--bad) 14%,transparent);border:1px solid color-mix(in srgb,var(--bad) 40%,transparent)}
+  .status{font-size:12px;color:var(--mut);min-height:16px}
+</style></head>
+<body><div class="wrap">
+  <h1>Listing Walkthrough Studio — Intake</h1>
+  <p class="sub">Drop in the assets, save the storyboard, watch preflight go green, then run the pipeline.</p>
+
+  <div class="card">
+    <div id="banner" class="banner">Loading…</div>
+    <ul class="pf" id="pf"></ul>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h3>Reference frames <span class="muted">(the quality bar)</span></h3>
+      <div class="drop" data-target="reference-frames"><strong>Drop frames</strong> or click<br><small>png / jpg / webp — critic compares ours against these</small></div>
+      <div class="thumbs" data-thumbs="reference-frames"></div>
+    </div>
+    <div class="card">
+      <h3>Listing photos <span class="muted">(source imagery)</span></h3>
+      <div class="drop" data-target="listing-photos"><strong>Drop photos</strong> or click<br><small>png / jpg / webp — animated into walkthrough clips</small></div>
+      <div class="thumbs" data-thumbs="listing-photos"></div>
+    </div>
+    <div class="card">
+      <h3>Floor plan</h3>
+      <div class="drop" data-target="floorplan"><strong>Drop floor plan</strong> or click<br><small>png / jpg / webp / pdf</small></div>
+      <div class="thumbs" data-thumbs="floorplan"></div>
+    </div>
+    <div class="card">
+      <h3>Matterport sample <span class="muted">(live fallback bar)</span></h3>
+      <p class="muted" style="margin-top:0;font-size:13px">A sample walkthrough URL the critic opens in a browser.</p>
+      <input type="text" id="matterport" placeholder="https://my.matterport.com/show/?m=…">
+      <div class="row" style="margin-top:8px"><button id="saveMatterport" class="ghost">Save URL</button><span class="status" id="matterportStatus"></span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Approved storyboard</h3>
+    <p class="muted" style="margin-top:0;font-size:13px">The ordered shot list the pipeline consumes. Edit JSON, or load the example to start. Schema: <span class="mono">schemas/storyboard.schema.json</span>.</p>
+    <textarea id="storyboard" spellcheck="false" placeholder="{ &quot;listingId&quot;: &quot;…&quot;, &quot;propertySize&quot;: &quot;midHome&quot;, &quot;shots&quot;: [ … ] }"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button id="saveStoryboard">Save storyboard</button>
+      <button id="loadExample" class="ghost">Load example</button>
+      <span class="status" id="storyboardStatus"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Run the pipeline</h3>
+    <div class="row">
+      <button id="run-preflight" class="ghost">Preflight</button>
+      <button id="run-plan" class="ghost">Build shot plan</button>
+      <button id="run-assemble" class="ghost">Assemble</button>
+      <button id="run-progress" class="ghost">Refresh progress</button>
+      <span class="status" id="runStatus"></span>
+    </div>
+    <p class="muted" style="font-size:13px;margin:10px 0 0">Clip generation (Higgsfield) runs through the agent, not this dashboard — build the shot plan here, ask the agent to generate clips into <span class="mono">work/clips/</span>, then Assemble.</p>
+    <pre class="log" id="log" hidden></pre>
+  </div>
+
+  <div class="card">
+    <h3>Latest assembled walkthrough</h3>
+    <div id="renderWrap"><p class="muted">No render yet.</p></div>
+  </div>
+
+  <div class="card">
+    <h3>Pieces</h3>
+    <table><thead><tr><th>Piece</th><th>Status</th><th>Rounds</th><th>Remaining gap</th></tr></thead><tbody id="pieces"></tbody></table>
+  </div>
+</div>
+
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const STATUS_COLOR = { pending:'#6b7280', looping:'#d97706', won:'#059669', flagged:'#dc2626' };
+
+async function api(path, opts){ const r = await fetch(path, opts); const t = await r.text(); try { return { ok:r.ok, data: JSON.parse(t) }; } catch { return { ok:r.ok, data:t }; } }
+
+async function refresh(){
+  const { data } = await api('/api/state');
+  // banner + preflight
+  const b = $('#banner');
+  b.className = 'banner ' + (data.preflight.inputsReady ? 'ok' : 'bad');
+  b.textContent = data.preflight.inputsReady ? '✅ Inputs ready — the gauntlet can run' : '⛔ Blocked — add the missing inputs below';
+  $('#pf').innerHTML = data.preflight.results.map(r => {
+    const cls = r.ok ? 'ok' : (r.blocker ? 'bad' : 'warn');
+    const lab = r.ok ? 'OK' : (r.blocker ? 'MISSING' : 'OPTIONAL');
+    return `<li><span class="pill ${cls}">${lab}</span><span><strong>${r.name}</strong> — <span class="muted">${r.detail}</span></span></li>`;
+  }).join('');
+  // thumbs
+  for (const target of ['reference-frames','listing-photos','floorplan']){
+    const box = $(`[data-thumbs="${target}"]`);
+    box.innerHTML = (data.assets[target]||[]).map(n => {
+      const isPdf = /\.pdf$/i.test(n);
+      const inner = isPdf ? `<div class="pdf">PDF</div>` : `<img src="/api/asset-file?target=${target}&name=${encodeURIComponent(n)}">`;
+      return `<div class="thumb" title="${n}">${inner}<button class="x" data-del="${target}|${n}">✕</button></div>`;
+    }).join('');
+  }
+  // matterport
+  if (document.activeElement !== $('#matterport')) $('#matterport').value = data.matterport || '';
+  // render
+  $('#renderWrap').innerHTML = data.renderExists
+    ? `<video controls preload="metadata" src="/api/render"></video>`
+    : `<p class="muted">No render yet. Appears here after Assemble.</p>`;
+  // pieces
+  $('#pieces').innerHTML = data.pieces.map(p => {
+    const c = STATUS_COLOR[p.status] || '#6b7280';
+    return `<tr><td><strong>${p.title}</strong></td><td><span class="chip" style="--c:${c}">${p.status}</span></td><td>${p.rounds}</td><td class="muted">${p.remainingGap||'—'}</td></tr>`;
+  }).join('');
+}
+
+// uploads (raw body per file — no multipart)
+async function upload(target, file){
+  const name = file.name;
+  await fetch(`/api/upload?target=${target}&name=${encodeURIComponent(name)}`, { method:'POST', body:file });
+}
+function wireDrop(el){
+  const target = el.dataset.target;
+  const input = document.createElement('input'); input.type='file'; input.multiple=true; input.hidden=true;
+  el.appendChild(input);
+  el.addEventListener('click', ()=>input.click());
+  input.addEventListener('change', async ()=>{ for(const f of input.files) await upload(target,f); input.value=''; refresh(); });
+  ['dragenter','dragover'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.add('hot');}));
+  ['dragleave','drop'].forEach(ev=>el.addEventListener(ev,e=>{e.preventDefault();el.classList.remove('hot');}));
+  el.addEventListener('drop', async e=>{ const fs=[...(e.dataTransfer?.files||[])]; for(const f of fs) await upload(target,f); refresh(); });
+}
+$$('.drop').forEach(wireDrop);
+
+document.addEventListener('click', async e=>{
+  const del = e.target.dataset.del;
+  if(del){ const [t,n]=del.split('|'); await api(`/api/delete?target=${t}&name=${encodeURIComponent(n)}`,{method:'POST'}); refresh(); }
+});
+
+$('#saveMatterport').onclick = async ()=>{
+  const s=$('#matterportStatus'); s.textContent='Saving…';
+  await api('/api/matterport',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({url:$('#matterport').value})});
+  s.textContent='Saved.'; setTimeout(()=>s.textContent='',1500); refresh();
+};
+$('#loadExample').onclick = async ()=>{ const { data } = await api('/api/storyboard/example'); $('#storyboard').value = typeof data==='string'?data:JSON.stringify(data,null,2); };
+$('#saveStoryboard').onclick = async ()=>{
+  const s=$('#storyboardStatus'); s.textContent='Saving…';
+  let parsed; try{ parsed=JSON.parse($('#storyboard').value);}catch(err){ s.textContent='❌ Invalid JSON: '+err.message; return; }
+  const { ok, data } = await api('/api/storyboard',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(parsed)});
+  s.textContent = ok ? `✅ Saved (${data.shots} shots)` : ('❌ '+(data.error||'error')); refresh();
+};
+
+for (const step of ['preflight','plan','assemble','progress']){
+  $('#run-'+step).onclick = async (e)=>{
+    const btn=e.target, st=$('#runStatus'), log=$('#log');
+    btn.disabled=true; st.textContent='Running '+step+'…';
+    const { data } = await api('/api/run?step='+step,{method:'POST'});
+    st.textContent = data.ok ? ('✅ '+step+' done') : ('❌ '+step+' failed (exit '+data.code+')');
+    log.hidden=false; log.textContent=((data.stdout||'')+'\n'+(data.stderr||'')).trim();
+    btn.disabled=false; refresh();
+  };
+}
+
+// load storyboard if present
+(async ()=>{ const r=await fetch('/api/storyboard'); if(r.ok){ $('#storyboard').value = await r.text(); } refresh(); setInterval(refresh, 5000); })();
+</script>
+</body></html>
