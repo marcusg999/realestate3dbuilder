@@ -4,6 +4,10 @@ Builds one assembled property **walkthrough video** from an approved storyboard 
 the listing's photos + floor plan, tuned to match professional property
 walkthroughs.
 
+> **Two-mode direction:** this is **Mode A — Cinematic Walkthrough Video** (shipped).
+> **Mode B — Interactive 3D Tour** (Matterport-style) is planned behind the same
+> shared intake. See **[ROADMAP.md](ROADMAP.md)**.
+
 This repo currently contains the **walkthrough-video generation step scaffold**:
 the full pipeline code and the builder/critic gauntlet harness, ready to run the
 moment real assets are dropped in. **No AI generation runs by itself** — clip
