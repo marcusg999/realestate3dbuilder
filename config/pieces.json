@@ -1,0 +1,132 @@
+{
+  "$comment": "The walkthrough-generation step is split into the smallest units that can be built and judged on their own. Each piece has: the knobs a builder tunes, the rubric a harsh critic scores it against the reference bar, and live gauntlet state. The gauntlet loops a piece until the critic picks OURS blind, or stops after 3 consecutive non-improving rounds and flags it. Nothing here runs generation by itself; the orchestrator (src/gauntlet.js) drives it once assets are present.",
+  "bar": {
+    "referenceFrames": "inputs/reference-frames",
+    "matterportSample": "inputs/matterport.url.txt",
+    "note": "Critic must OPEN these directly every round and compare blind (labels stripped), never against a description of them."
+  },
+  "flagRule": {
+    "maxNonImprovingRounds": 3,
+    "action": "Stop looping this piece, flag to human with current render + named remaining gap, move on. Do not loop forever."
+  },
+  "pieces": [
+    {
+      "id": "camera-motion",
+      "title": "Camera motion",
+      "judged": "Smoothness, speed, and a natural path through a room. No warping, no rubber-banding, no jitter, no drift/parallax artifacts on furniture edges.",
+      "knobs": {
+        "motionPreset": ["dolly_in", "dolly_out", "push_in", "pull_back", "orbit_left", "orbit_right", "crane_up", "crane_down", "reveal", "track_forward"],
+        "speed": { "range": [0.4, 1.4], "unit": "relative", "default": 0.8 },
+        "intensity": { "range": [0.2, 0.9], "default": 0.5 },
+        "model": "higgsfield video model + motion params chosen per shot in shot-plan"
+      },
+      "rubric": [
+        "Motion reads as a Steadicam/gimbal operator, not a drone lurch or a zoom.",
+        "Constant velocity through the middle of the move; gentle ease-in/ease-out at ends.",
+        "Straight lines (door frames, counters, ceilings) stay straight through the whole clip.",
+        "No morphing of fixtures, no melting reflections, no impossible geometry."
+      ],
+      "state": { "status": "pending", "rounds": 0, "nonImprovingStreak": 0, "bestRender": null, "criticVerdict": null, "remainingGap": null }
+    },
+    {
+      "id": "transitions",
+      "title": "Room-to-room transitions",
+      "judged": "How one room hands off to the next: cut rhythm, match-cut alignment, no jarring exposure/scale pops across the boundary.",
+      "knobs": {
+        "type": ["hard_cut", "dissolve", "whip_pan_match", "through_doorway_match"],
+        "durationSec": { "range": [0.0, 0.8], "default": 0.35 },
+        "matchOn": ["doorway", "hallway_vanishing_point", "light_source"]
+      },
+      "rubric": [
+        "Transitions feel intentional and invisible, like a tour editor cut them.",
+        "No black flash, no double-exposure mush, no mismatched motion direction across the cut.",
+        "Through-doorway moves continue motion direction into the next room."
+      ],
+      "state": { "status": "pending", "rounds": 0, "nonImprovingStreak": 0, "bestRender": null, "criticVerdict": null, "remainingGap": null }
+    },
+    {
+      "id": "framing",
+      "title": "Framing & composition per shot",
+      "judged": "Each shot's start framing: level horizon, leading lines, headroom, hero feature centered, nothing awkwardly cropped.",
+      "knobs": {
+        "sourcePhoto": "path into inputs/listing-photos",
+        "crop": ["as_shot", "reframe_16x9", "reframe_hero"],
+        "compositionPrompt": "string appended to generation prompt"
+      },
+      "rubric": [
+        "Horizon dead level; verticals vertical.",
+        "Room's best feature (island, fireplace, view, staircase) anchors the frame.",
+        "No clipped ceilings/floors, no dead center-punch when a rule-of-thirds read is stronger."
+      ],
+      "state": { "status": "pending", "rounds": 0, "nonImprovingStreak": 0, "bestRender": null, "criticVerdict": null, "remainingGap": null }
+    },
+    {
+      "id": "pacing",
+      "title": "Pacing against clip length",
+      "judged": "Per-shot hold time vs. how much the shot reveals; overall rhythm not too fast (frantic) or too slow (open-house-bored).",
+      "knobs": {
+        "shotDurationSec": { "range": [2.0, 6.0], "default": 3.5 },
+        "holdHeadTailSec": { "range": [0.0, 0.6], "default": 0.25 },
+        "rhythm": ["even", "accelerate_to_hero", "breathe_on_hero"]
+      },
+      "rubric": [
+        "Hero rooms get more time; utility rooms move on quickly.",
+        "Cuts land on motion settle, not mid-lurch.",
+        "Total length scales with property size (see assembly rubric)."
+      ],
+      "state": { "status": "pending", "rounds": 0, "nonImprovingStreak": 0, "bestRender": null, "criticVerdict": null, "remainingGap": null }
+    },
+    {
+      "id": "color",
+      "title": "Lighting & color consistency across clips",
+      "judged": "Every clip looks shot on the same camera on the same day: consistent white balance, exposure, contrast, and skin/wood/marble tones.",
+      "knobs": {
+        "referenceClip": "index of the clip whose grade is the anchor",
+        "normalize": ["exposure", "white_balance", "contrast", "saturation"],
+        "strength": { "range": [0.0, 1.0], "default": 0.7 }
+      },
+      "rubric": [
+        "No clip is visibly warmer/cooler or brighter/darker than its neighbors.",
+        "Whites (marble, cabinetry) read the same white across rooms.",
+        "Highlights not blown, shadows not crushed."
+      ],
+      "state": { "status": "pending", "rounds": 0, "nonImprovingStreak": 0, "bestRender": null, "criticVerdict": null, "remainingGap": null }
+    },
+    {
+      "id": "captions",
+      "title": "Caption / lower-third treatment",
+      "judged": "Room labels / feature call-outs: legible, tasteful, on-brand, never covering the hero feature, clean fade timing.",
+      "knobs": {
+        "style": ["minimal_lower_third", "corner_label", "none"],
+        "font": "path or family",
+        "sizePct": { "range": [2.5, 5.0], "default": 3.2 },
+        "position": ["bottom_left", "bottom_center", "top_left"],
+        "fade": { "inSec": 0.3, "outSec": 0.3, "holdSec": 2.0 },
+        "safeArea": true
+      },
+      "rubric": [
+        "Looks like a high-end listing brand, not stock TV chyron.",
+        "Text inside title-safe margins; never over the subject.",
+        "Fades in/out smoothly, matched to the shot's hold."
+      ],
+      "state": { "status": "pending", "rounds": 0, "nonImprovingStreak": 0, "bestRender": null, "criticVerdict": null, "remainingGap": null }
+    },
+    {
+      "id": "assembly",
+      "title": "Final assembly",
+      "judged": "The whole video: cut rhythm end-to-end, sequence logic (arrive -> public rooms -> private -> exterior), total length appropriate to property size, optional music bed.",
+      "knobs": {
+        "order": "sequence of shot ids",
+        "targetTotalSec": { "smallHome": [45, 75], "midHome": [75, 120], "estate": [120, 180] },
+        "musicBed": "optional path",
+        "bookends": ["exterior_open", "exterior_close"]
+      },
+      "rubric": [
+        "Plays like a professional property film an agent would send a high-end client.",
+        "Flows in a sensible tour order; no whiplash between distant rooms.",
+        "Ends on a strong exterior/hero beat; length fits the home's size."
+      ],
+      "state": { "status": "pending", "rounds": 0, "nonImprovingStreak": 0, "bestRender": null, "criticVerdict": null, "remainingGap": null }
+    }
+  ]
+}

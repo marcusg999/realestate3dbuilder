@@ -1,0 +1,20 @@
+{
+  "name": "realestate3dbuilder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Listing Walkthrough Studio — walkthrough-video generation step (storyboard + listing photos + floor plan -> assembled property walkthrough).",
+  "bin": {
+    "walkthrough": "src/cli.js"
+  },
+  "scripts": {
+    "preflight": "node src/preflight.js",
+    "plan": "node src/build-shot-plan.js",
+    "assemble": "node src/assemble.js",
+    "compare": "node src/compare-harness.js",
+    "gauntlet:plan": "node src/gauntlet.js",
+    "progress": "node src/progress.js",
+    "dev:clips": "node src/dev/make-placeholder-clips.js",
+    "dev:demo": "node src/dev/make-placeholder-clips.js && cp inputs/storyboard.example.json inputs/storyboard.json 2>/dev/null; node src/build-shot-plan.js && node src/assemble.js && node src/progress.js"
+  },
+  "engines": { "node": ">=16" }
+}
