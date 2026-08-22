@@ -20,6 +20,10 @@ builder/critic gauntlet until each piece beats the reference bar blind.
 
 ## 1. Drop in the inputs
 
+Easiest: `npm run dashboard` → http://localhost:4300 and drag each asset into its
+zone (this writes the files to the folders below and lets you save the
+storyboard + Matterport URL). Or place files manually:
+
 | Put | Where |
 |-----|-------|
 | Reference frames (the quality **bar**) | `inputs/reference-frames/*.png\|jpg` |

@@ -37,7 +37,22 @@ over the reference bar **blind**, or flagged after 3 non-improving rounds
 6. **captions** — lower-third / room-label treatment
 7. **assembly** — sequence, total length vs. property size, music
 
-## Quick start
+## Intake dashboard (recommended)
+
+A local drag-drop dashboard to drop in every asset, set the Matterport URL,
+edit/save the storyboard, watch preflight go green, run the pipeline steps, and
+play the latest render — no dependencies:
+
+```
+npm run dashboard              # -> http://localhost:4300
+```
+
+Drop reference frames, listing photos, and the floor plan into their zones; paste
+the Matterport URL; load/edit the storyboard; then **Build shot plan → (ask the
+agent to generate clips) → Assemble**. Clip generation runs through the Higgsfield
+MCP (the agent), not the dashboard.
+
+## Quick start (CLI)
 
 ```
 node src/preflight.js          # gate: lists missing inputs until ready
@@ -72,6 +87,8 @@ config/pieces.json          seven pieces: knobs, critic rubric, gauntlet state
 config/pipeline.config.json paths, video/audio settings, ffmpeg resolution
 schemas/storyboard.schema.json   input contract
 inputs/                     reference-frames/, listing-photos/, floorplan/, storyboard.json
+src/dashboard.js            local drag-drop intake + control dashboard
+public/dashboard.html       dashboard front-end
 src/preflight.js            input gate
 src/build-shot-plan.js      storyboard -> Higgsfield generation specs
 src/assemble.js             clips + captions + transitions + color + music -> walkthrough
