@@ -87,10 +87,20 @@ async function main() {
 
   const cfg = loadConfig();
   const plan = loadPlan();
-  const shots = selectShots(plan, { only, force });
 
+  // Clearer error than "nothing to generate" when --only names a shot that
+  // isn't in the current plan (e.g. after rebuilding the storyboard).
+  if (only && !plan.shots.some((s) => s.id === only)) {
+    console.error(`No shot with id "${only}" in the current plan.`);
+    console.error(`Available ids: ${plan.shots.map((s) => s.id).join(', ')}`);
+    process.exit(1);
+  }
+
+  const shots = selectShots(plan, { only, force });
   if (!shots.length) {
-    console.log('Nothing to generate — every clip already exists (use --force to regenerate).');
+    console.log(only
+      ? `"${only}" already has a clip — pass --force to regenerate it.`
+      : 'Nothing to generate — every clip already exists (use --force to regenerate).');
     return;
   }
 
