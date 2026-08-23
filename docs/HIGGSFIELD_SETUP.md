@@ -37,7 +37,9 @@ npm run dashboard         # http://localhost:4300
 
 In the dashboard:
 1. Drop in **listing photos** (and floor plan), set the **Matterport URL** if you want.
-2. Load/edit and **Save** the **storyboard** (Load example to start).
+2. Click **Build from photos** — writes a storyboard from the photos you dropped
+   (labels + camera moves inferred, paths guaranteed to match). Tweak/reorder in
+   the editor and **Save** if you like. (Filenames do **not** need to match anything.)
 3. **Build shot plan.**
 4. **Generate clips (Higgsfield)** — uploads each photo, runs image-to-video, and
    saves clips to `work/clips/`. Spends credits; a few rooms take a few minutes.

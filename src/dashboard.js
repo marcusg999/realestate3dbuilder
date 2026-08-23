@@ -97,17 +97,18 @@ function apiState() {
 
 function runStep(step) {
   const map = {
-    preflight: 'src/preflight.js',
-    plan: 'src/build-shot-plan.js',
-    generate: 'src/generate-clips.js',
-    assemble: 'src/assemble.js',
-    progress: 'src/progress.js',
-    devclips: 'src/dev/make-placeholder-clips.js',
+    preflight: ['src/preflight.js'],
+    storyboard: ['src/build-storyboard.js', '--force'],
+    plan: ['src/build-shot-plan.js'],
+    generate: ['src/generate-clips.js'],
+    assemble: ['src/assemble.js'],
+    progress: ['src/progress.js'],
+    devclips: ['src/dev/make-placeholder-clips.js'],
   };
-  const rel = map[step];
+  const argv = map[step];
   return new Promise((resolve) => {
-    if (!rel) return resolve({ ok: false, code: 1, stdout: '', stderr: `unknown step: ${step}` });
-    const child = spawn(process.execPath, [rel], { cwd: ROOT, env: process.env });
+    if (!argv) return resolve({ ok: false, code: 1, stdout: '', stderr: `unknown step: ${step}` });
+    const child = spawn(process.execPath, argv, { cwd: ROOT, env: process.env });
     let out = '', err = '';
     child.stdout.on('data', (d) => (out += d));
     child.stderr.on('data', (d) => (err += d));

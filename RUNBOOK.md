@@ -38,11 +38,19 @@ storyboard + Matterport URL). Or place files manually:
 node src/preflight.js        # exits non-zero and lists what's missing until ready
 ```
 
-## 3. Build the shot plan
+## 3. Build the storyboard + shot plan
+
+Easiest: generate the storyboard from the photos you dropped (paths always match,
+no filename matching needed) — then build the plan:
 
 ```
-node src/build-shot-plan.js  # inputs/storyboard.json -> work/shot-plan.json
+node src/build-storyboard.js   # inputs/listing-photos/* -> inputs/storyboard.json
+node src/build-shot-plan.js    # inputs/storyboard.json  -> work/shot-plan.json
 ```
+
+(Or hand-write `inputs/storyboard.json` per `schemas/storyboard.schema.json` /
+`inputs/storyboard.example.json`.) The dashboard's **Build from photos** button
+runs `build-storyboard.js`.
 
 Each entry has a `higgsfield` block that maps directly onto a `generate_video`
 call, and an `outClip` path the clip must be saved to.

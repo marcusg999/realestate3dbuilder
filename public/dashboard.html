@@ -83,9 +83,11 @@
     <textarea id="storyboard" spellcheck="false" placeholder="{ &quot;listingId&quot;: &quot;…&quot;, &quot;propertySize&quot;: &quot;midHome&quot;, &quot;shots&quot;: [ … ] }"></textarea>
     <div class="row" style="margin-top:8px">
       <button id="saveStoryboard">Save storyboard</button>
+      <button id="buildStoryboard" class="ghost" title="Reads the photos in inputs/listing-photos/ and writes a matching storyboard">Build from photos</button>
       <button id="loadExample" class="ghost">Load example</button>
       <span class="status" id="storyboardStatus"></span>
     </div>
+    <p class="muted" style="font-size:12px;margin:6px 0 0"><strong>Build from photos</strong> reads whatever you dropped into Listing photos and writes a storyboard whose paths match those files — so filenames never have to line up by hand.</p>
   </div>
 
   <div class="card">
@@ -206,6 +208,17 @@ $('#saveMatterport').onclick = async ()=>{
   s.textContent='Saved.'; setTimeout(()=>s.textContent='',1500); refresh();
 };
 $('#loadExample').onclick = async ()=>{ const { data } = await api('/api/storyboard/example'); $('#storyboard').value = typeof data==='string'?data:JSON.stringify(data,null,2); };
+$('#buildStoryboard').onclick = async (e)=>{
+  const s=$('#storyboardStatus'); e.target.disabled=true; s.textContent='Reading photos…';
+  const { data } = await api('/api/run?step=storyboard',{method:'POST'});
+  if (data.ok){
+    const r = await fetch('/api/storyboard'); if (r.ok) $('#storyboard').value = await r.text();
+    s.textContent='✅ Built from photos';
+  } else {
+    s.textContent='❌ '+((data.stderr||data.stdout||'failed').trim().split('\n')[0]);
+  }
+  e.target.disabled=false; refresh();
+};
 $('#saveStoryboard').onclick = async ()=>{
   const s=$('#storyboardStatus'); s.textContent='Saving…';
   let parsed; try{ parsed=JSON.parse($('#storyboard').value);}catch(err){ s.textContent='❌ Invalid JSON: '+err.message; return; }

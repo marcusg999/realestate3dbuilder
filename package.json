@@ -9,6 +9,7 @@
   "scripts": {
     "dashboard": "node src/dashboard.js",
     "preflight": "node src/preflight.js",
+    "storyboard": "node src/build-storyboard.js",
     "plan": "node src/build-shot-plan.js",
     "generate": "node src/generate-clips.js",
     "assemble": "node src/assemble.js",
