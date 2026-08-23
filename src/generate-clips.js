@@ -58,9 +58,13 @@ async function uploadLocalImage(baseURL, key, secret, file) {
   let j;
   try { j = JSON.parse(t1); } catch { throw new Error(`generate-upload-url returned non-JSON: ${t1.slice(0, 200)}`); }
   if (!j.upload_url || !j.public_url) throw new Error(`generate-upload-url missing url fields: ${t1.slice(0, 200)}`);
-  const putHeaders = (j.headers && typeof j.headers === 'object' && Object.keys(j.headers).length)
-    ? j.headers
-    : { 'Content-Type': ct };
+  // The response returns the EXACT headers the presigned URL was signed for
+  // (Content-Type + x-amz-tagging). Send them verbatim, or S3 rejects the
+  // signature. Field is `upload_headers` (older/other shapes: `headers`).
+  const signed = (j.upload_headers && typeof j.upload_headers === 'object' && Object.keys(j.upload_headers).length)
+    ? j.upload_headers
+    : (j.headers && typeof j.headers === 'object' && Object.keys(j.headers).length ? j.headers : null);
+  const putHeaders = signed || { 'Content-Type': ct };
   const r2 = await fetch(j.upload_url, { method: 'PUT', headers: putHeaders, body: fs.readFileSync(abs(file)) });
   if (!r2.ok) { const t2 = await r2.text(); throw new Error(`storage PUT ${r2.status}: ${t2.slice(0, 400)}`); }
   return j.public_url;
