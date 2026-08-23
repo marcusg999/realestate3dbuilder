@@ -97,8 +97,17 @@
       <button id="run-progress" class="ghost">Refresh progress</button>
       <span class="status" id="runStatus"></span>
     </div>
-    <p class="muted" style="font-size:13px;margin:10px 0 0">Clip generation (Higgsfield) runs through the agent, not this dashboard — build the shot plan here, ask the agent to generate clips into <span class="mono">work/clips/</span>, then Assemble.</p>
+    <p class="muted" style="font-size:13px;margin:10px 0 4px"><strong>Order:</strong> Build shot plan → generate clips → Assemble. Clip generation (Higgsfield) runs through the agent, not this dashboard — ask the agent to generate clips into <span class="mono">work/clips/</span>. Assembling before clips exist will tell you which are missing.</p>
+    <div class="row" style="margin-top:6px">
+      <button id="run-devclips" class="ghost" title="Local ffmpeg test footage — not Higgsfield, no credits">Generate placeholder clips (test)</button>
+      <span class="muted" style="font-size:12px">Fills <span class="mono">work/clips/</span> with local test footage so you can see the full pipeline without the agent.</span>
+    </div>
     <pre class="log" id="log" hidden></pre>
+  </div>
+
+  <div class="card">
+    <h3>Clips</h3>
+    <div id="clips"><p class="muted">Build the shot plan to see per-shot clip status.</p></div>
   </div>
 
   <div class="card">
@@ -145,6 +154,15 @@ async function refresh(){
   $('#renderWrap').innerHTML = data.renderExists
     ? `<video controls preload="metadata" src="/api/render"></video>`
     : `<p class="muted">No render yet. Appears here after Assemble.</p>`;
+  // clips
+  const clipsBox = $('#clips');
+  if (!data.clips) {
+    clipsBox.innerHTML = '<p class="muted">Build the shot plan to see per-shot clip status.</p>';
+  } else {
+    const c = data.clips;
+    const rows = c.shots.map(s => `<tr><td><strong>${s.id}</strong> <span class="muted">${s.room||''}</span></td><td>${s.has?'<span class="pill ok">ready</span>':'<span class="pill bad">missing</span>'}</td></tr>`).join('');
+    clipsBox.innerHTML = `<p class="muted" style="margin:0 0 8px">${c.ready}/${c.total} clips generated ${c.ready===c.total?'— ready to assemble':'— generate the rest before assembling'}.</p><table><tbody>${rows}</tbody></table>`;
+  }
   // pieces
   $('#pieces').innerHTML = data.pieces.map(p => {
     const c = STATUS_COLOR[p.status] || '#6b7280';
@@ -187,7 +205,7 @@ $('#saveStoryboard').onclick = async ()=>{
   s.textContent = ok ? `✅ Saved (${data.shots} shots)` : ('❌ '+(data.error||'error')); refresh();
 };
 
-for (const step of ['preflight','plan','assemble','progress']){
+for (const step of ['preflight','plan','assemble','progress','devclips']){
   $('#run-'+step).onclick = async (e)=>{
     const btn=e.target, st=$('#runStatus'), log=$('#log');
     btn.disabled=true; st.textContent='Running '+step+'…';

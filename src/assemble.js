@@ -130,11 +130,32 @@ function addMusic(videoPath, musicPath, cfg, outPath) {
   ]);
 }
 
+// Which shots don't yet have a rendered clip on disk.
+function missingClips(shots) {
+  return shots.filter((s) => !fs.existsSync(abs(s.outClip)));
+}
+
 function assemble(opts = {}) {
   const cfg = loadConfig();
   const plan = loadShotPlan(opts.planPath);
   const shots = plan.shots;
   if (!shots.length) throw new Error('shot plan has no shots');
+
+  // Pre-check ALL clips up front, so we report every missing one at once with
+  // clear next steps — rather than dying on the first shot with a stack trace.
+  const missing = missingClips(shots);
+  if (missing.length) {
+    const list = missing.map((s) => `  - ${s.id} -> ${s.outClip}`).join('\n');
+    throw new Error(
+      `Not ready to assemble: ${missing.length} of ${shots.length} shot clip(s) haven't been generated yet.\n\n` +
+      `Missing clips:\n${list}\n\n` +
+      `Generate them first, then assemble:\n` +
+      `  • Real clips: have the agent run Higgsfield for each shot in work/shot-plan.json\n` +
+      `    (use spec.higgsfield, save the result to spec.outClip). Clip generation is not done\n` +
+      `    by this dashboard.\n` +
+      `  • Local test footage (no assets/credits): run  npm run dev:clips  then assemble again.`
+    );
+  }
 
   // Stage 1
   const segments = shots.map((s) => buildSegment(s, cfg, opts));
@@ -163,8 +184,13 @@ function dbToLinear(db) { return round(Math.pow(10, db / 20)); }
 function round(v) { return Math.round(v * 1000) / 1000; }
 
 if (require.main === module) {
-  const res = assemble();
-  console.log(`Assembled ${res.shots} shot(s) -> ${path.relative(ROOT, res.output)} (${res.totalSec}s)`);
+  try {
+    const res = assemble();
+    console.log(`Assembled ${res.shots} shot(s) -> ${path.relative(ROOT, res.output)} (${res.totalSec}s)`);
+  } catch (err) {
+    console.error('\n' + err.message + '\n');
+    process.exit(1);
+  }
 }
 
-module.exports = { assemble, buildSegment };
+module.exports = { assemble, buildSegment, missingClips };

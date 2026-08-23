@@ -59,6 +59,20 @@ function apiState() {
   const storyboardPath = abs(cfgPaths.storyboard);
   const hasStoryboard = fs.existsSync(storyboardPath);
   const renderExists = fs.existsSync(abs(cfgPaths.assembledVideo));
+
+  // Clip status from the shot plan (if built): which shots have a rendered clip.
+  let clips = null;
+  const planPath = abs('work/shot-plan.json');
+  if (fs.existsSync(planPath)) {
+    try {
+      const plan = JSON.parse(fs.readFileSync(planPath, 'utf8'));
+      const shots = (plan.shots || []).map((s) => ({
+        id: s.id, room: s.room, has: fs.existsSync(abs(s.outClip)),
+      }));
+      clips = { total: shots.length, ready: shots.filter((s) => s.has).length, shots };
+    } catch { /* ignore malformed plan */ }
+  }
+
   return {
     preflight: report,
     pieces: state.pieces,
@@ -71,6 +85,7 @@ function apiState() {
     matterport,
     hasStoryboard,
     renderExists,
+    clips,
   };
 }
 
@@ -80,6 +95,7 @@ function runStep(step) {
     plan: 'src/build-shot-plan.js',
     assemble: 'src/assemble.js',
     progress: 'src/progress.js',
+    devclips: 'src/dev/make-placeholder-clips.js',
   };
   const rel = map[step];
   return new Promise((resolve) => {
