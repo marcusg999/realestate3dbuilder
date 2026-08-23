@@ -5,6 +5,24 @@ const { execFileSync } = require('child_process');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 
+// Minimal .env loader (no dependency). Loads ROOT/.env once, without overriding
+// vars already set in the environment. Keeps API keys out of shell history.
+(function loadDotEnv() {
+  try {
+    const envPath = path.join(ROOT, '.env');
+    if (!fs.existsSync(envPath)) return;
+    for (const line of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {
+      const m = line.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)\s*$/);
+      if (!m || line.trim().startsWith('#')) continue;
+      let val = m[2].trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (process.env[m[1]] === undefined) process.env[m[1]] = val;
+    }
+  } catch { /* non-fatal */ }
+})();
+
 function loadJson(rel) {
   const p = path.isAbsolute(rel) ? rel : path.join(ROOT, rel);
   return JSON.parse(fs.readFileSync(p, 'utf8'));

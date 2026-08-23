@@ -16,6 +16,9 @@ inputs/storyboard.json
 vendor/
 *.tar.xz
 
+# Secrets — never commit API keys
+.env
+
 # Node
 node_modules/
 npm-debug.log*

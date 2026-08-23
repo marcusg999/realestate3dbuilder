@@ -55,6 +55,12 @@ function check() {
   add('ffmpeg + ffprobe', ffmpeg.available(),
     ffmpeg.available() ? 'resolved' : 'install ffmpeg or set FFMPEG_BIN');
 
+  // Higgsfield credentials (needed only for local clip generation; not a blocker)
+  const hfKey = process.env.HF_API_KEY || process.env.HIGGSFIELD_API_KEY;
+  const hfSecret = process.env.HF_SECRET || process.env.HIGGSFIELD_API_SECRET;
+  add('Higgsfield API key (for local clip generation)', Boolean(hfKey && hfSecret),
+    hfKey && hfSecret ? 'set' : 'set HF_API_KEY + HF_SECRET in .env to generate clips locally (see docs/HIGGSFIELD_SETUP.md)', false);
+
   const blockers = results.filter((r) => r.blocker && !r.ok);
   const inputsReady = blockers.length === 0;
   return { inputsReady, results, blockers };

@@ -52,9 +52,11 @@ npm run dashboard              # -> http://localhost:4300
 ```
 
 Drop reference frames, listing photos, and the floor plan into their zones; paste
-the Matterport URL; load/edit the storyboard; then **Build shot plan → (ask the
-agent to generate clips) → Assemble**. Clip generation runs through the Higgsfield
-MCP (the agent), not the dashboard.
+the Matterport URL; load/edit the storyboard; then **Build shot plan → Generate
+clips (Higgsfield) → Assemble** — all local, no agent. Set your Higgsfield API key
+once in `.env` (see **[docs/HIGGSFIELD_SETUP.md](docs/HIGGSFIELD_SETUP.md)**). No
+key yet? Use **Generate placeholder clips (test)** to preview the pipeline with no
+credits.
 
 ## Quick start (CLI)
 

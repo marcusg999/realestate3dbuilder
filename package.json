@@ -10,6 +10,7 @@
     "dashboard": "node src/dashboard.js",
     "preflight": "node src/preflight.js",
     "plan": "node src/build-shot-plan.js",
+    "generate": "node src/generate-clips.js",
     "assemble": "node src/assemble.js",
     "compare": "node src/compare-harness.js",
     "gauntlet:plan": "node src/gauntlet.js",
@@ -17,5 +18,8 @@
     "dev:clips": "node src/dev/make-placeholder-clips.js",
     "dev:demo": "node src/dev/make-placeholder-clips.js && cp inputs/storyboard.example.json inputs/storyboard.json 2>/dev/null; node src/build-shot-plan.js && node src/assemble.js && node src/progress.js"
   },
-  "engines": { "node": ">=16" }
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "@higgsfield/client": "^0.2.1"
+  }
 }

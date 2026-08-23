@@ -86,6 +86,12 @@ function apiState() {
     hasStoryboard,
     renderExists,
     clips,
+    higgsfield: {
+      configured: Boolean(
+        (process.env.HF_API_KEY || process.env.HIGGSFIELD_API_KEY) &&
+        (process.env.HF_SECRET || process.env.HIGGSFIELD_API_SECRET)
+      ),
+    },
   };
 }
 
@@ -93,6 +99,7 @@ function runStep(step) {
   const map = {
     preflight: 'src/preflight.js',
     plan: 'src/build-shot-plan.js',
+    generate: 'src/generate-clips.js',
     assemble: 'src/assemble.js',
     progress: 'src/progress.js',
     devclips: 'src/dev/make-placeholder-clips.js',

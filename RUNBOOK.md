@@ -47,16 +47,27 @@ node src/build-shot-plan.js  # inputs/storyboard.json -> work/shot-plan.json
 Each entry has a `higgsfield` block that maps directly onto a `generate_video`
 call, and an `outClip` path the clip must be saved to.
 
-## 4. Generate clips (Higgsfield MCP — done by the orchestrating agent)
+## 4. Generate clips
 
-For every shot in `work/shot-plan.json`:
-- Call the Higgsfield MCP `generate_video` (image-to-video) with
-  `spec.higgsfield` (`startImage`, `prompt`, `motion`, `seconds`, `aspect`).
-  If unsure of the model, `models_explore(action:'recommend')` first.
-- Save the returned clip to `spec.outClip` (`work/clips/<id>.mp4`).
+**Primary path — fully local (no agent).** With a Higgsfield API key in `.env`
+(see `docs/HIGGSFIELD_SETUP.md`):
 
-Independent shots can be generated in a batch (`generate_video_batch` +
-`jobs_wait`).
+```
+node src/generate-clips.js --dry-run   # confirm shots/photos/prompts (no credits)
+node src/generate-clips.js             # upload photo -> image-to-video -> work/clips/<id>.mp4
+```
+
+Calls the Higgsfield HTTP API directly (`@higgsfield/client`), skips clips that
+already exist, and stops on out-of-credits. The dashboard's **Generate clips
+(Higgsfield)** button runs the same thing.
+
+**Alternative — via the agent (Higgsfield MCP).** For every shot in
+`work/shot-plan.json`, call `generate_video` (image-to-video) with
+`spec.higgsfield`, save the result to `spec.outClip`. Batch with
+`generate_video_batch` + `jobs_wait`.
+
+**No key / preview only.** `npm run dev:clips` fills `work/clips/` with local
+ffmpeg test footage — no Higgsfield, no credits.
 
 ## 5. Assemble
 
