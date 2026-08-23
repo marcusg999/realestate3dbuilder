@@ -41,6 +41,30 @@ function fmtFor(file) {
   if (ext === '.webp') return 'webp';
   return 'jpeg';
 }
+function contentTypeFor(file) { return `image/${fmtFor(file)}`; }
+
+// Upload a local image the documented way. The @higgsfield/client 0.2.x
+// uploadImage() drops the headers the presigned storage URL is signed to
+// require and 403s; we honor them here and surface the real error body.
+async function uploadLocalImage(baseURL, key, secret, file) {
+  const ct = contentTypeFor(file);
+  const r1 = await fetch(`${baseURL}/files/generate-upload-url`, {
+    method: 'POST',
+    headers: { 'hf-api-key': key, 'hf-secret': secret, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content_type: ct }),
+  });
+  const t1 = await r1.text();
+  if (!r1.ok) throw new Error(`generate-upload-url ${r1.status}: ${t1.slice(0, 300)}`);
+  let j;
+  try { j = JSON.parse(t1); } catch { throw new Error(`generate-upload-url returned non-JSON: ${t1.slice(0, 200)}`); }
+  if (!j.upload_url || !j.public_url) throw new Error(`generate-upload-url missing url fields: ${t1.slice(0, 200)}`);
+  const putHeaders = (j.headers && typeof j.headers === 'object' && Object.keys(j.headers).length)
+    ? j.headers
+    : { 'Content-Type': ct };
+  const r2 = await fetch(j.upload_url, { method: 'PUT', headers: putHeaders, body: fs.readFileSync(abs(file)) });
+  if (!r2.ok) { const t2 = await r2.text(); throw new Error(`storage PUT ${r2.status}: ${t2.slice(0, 400)}`); }
+  return j.public_url;
+}
 
 function dopModel(sdk, cfg) {
   const want = String(cfg.higgsfield?.dopModel || 'turbo').toUpperCase();
@@ -127,6 +151,7 @@ async function main() {
     process.exit(1);
   }
   client = new sdk.HiggsfieldClient({ apiKey: c.key, apiSecret: c.secret });
+  const baseURL = (client.config && client.config.baseURL) || 'https://platform.higgsfield.ai';
   const model = dopModel(sdk, cfg);
 
   let ok = 0;
@@ -139,7 +164,7 @@ async function main() {
     }
     try {
       process.stdout.write(`  • ${s.id}: uploading… `);
-      const publicUrl = await client.uploadImage(fs.readFileSync(img), fmtFor(img));
+      const publicUrl = await uploadLocalImage(baseURL, c.key, c.secret, s.sourcePhoto);
       process.stdout.write('generating… ');
       const jobSet = await client.generate('/v1/image2video/dop', {
         model,
