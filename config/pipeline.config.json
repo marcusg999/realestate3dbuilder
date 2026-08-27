@@ -37,6 +37,7 @@
     "$comment": "Reference values only. Actual generation is invoked via the Higgsfield MCP tools by the orchestrating agent, not by a script. build-shot-plan.js emits one spec object per shot that maps directly onto generate_video inputs.",
     "videoModelHint": "choose via models_explore(action:'recommend') at run time",
     "dopModel": "turbo",
+    "maxPollMinutes": 25,
     "clipSeconds": 5,
     "aspect": "16:9"
   }

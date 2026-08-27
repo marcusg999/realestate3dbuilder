@@ -18,6 +18,13 @@
 //   node src/generate-clips.js --force      # regenerate all (spends credits)
 //   node src/generate-clips.js --only kitchen-island
 //   node src/generate-clips.js --dry-run    # print exactly what would be sent; NO API calls, NO credits
+//   node src/generate-clips.js --resume     # poll jobs already submitted (after a timeout) WITHOUT re-charging
+//
+// Renders run on Higgsfield's servers and can take several minutes. Each shot is
+// submitted, its job id saved to work/jobs/, then polled up to
+// higgsfield.maxPollMinutes (config). If that window is exceeded the render keeps
+// going server-side and the job is kept — re-run with --resume to finish it
+// without spending credits again.
 
 const fs = require('fs');
 const path = require('path');
@@ -110,6 +117,7 @@ async function main() {
   const args = process.argv.slice(2);
   const dryRun = args.includes('--dry-run');
   const force = args.includes('--force');
+  const resume = args.includes('--resume');
   const onlyIdx = args.indexOf('--only');
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
 
@@ -154,35 +162,59 @@ async function main() {
     console.error('Higgsfield SDK not installed. Run:  npm install @higgsfield/client');
     process.exit(1);
   }
-  client = new sdk.HiggsfieldClient({ apiKey: c.key, apiSecret: c.secret });
+  const maxPollMin = cfg.higgsfield?.maxPollMinutes ?? 25;
+  client = new sdk.HiggsfieldClient({ apiKey: c.key, apiSecret: c.secret, maxPollTime: maxPollMin * 60000 });
   const baseURL = (client.config && client.config.baseURL) || 'https://platform.higgsfield.ai';
   const model = dopModel(sdk, cfg);
 
+  // Job-tracking so a poll timeout doesn't lose (or re-charge) a running render.
+  const jobsDir = abs('work/jobs');
+  const jobFile = (id) => path.join(jobsDir, `${id}.json`);
+  const saveJob = (shotId, jobSetId) => {
+    fs.mkdirSync(jobsDir, { recursive: true });
+    fs.writeFileSync(jobFile(shotId), JSON.stringify({ shot: shotId, jobSetId, submittedAt: new Date().toISOString() }, null, 2));
+  };
+  const loadJob = (shotId) => (fs.existsSync(jobFile(shotId)) ? JSON.parse(fs.readFileSync(jobFile(shotId), 'utf8')) : null);
+  const clearJob = (shotId) => { try { fs.rmSync(jobFile(shotId), { force: true }); } catch { /* noop */ } };
+
+  // Poll a submitted job to completion and download its result. Throws
+  // TimeoutError (kept job file lets you --resume) on our configurable timeout.
+  async function finishJob(s, jobSet) {
+    await jobSet.poll(client, client.config);
+    if (jobSet.isFailed) throw new Error('generation failed on server');
+    if (jobSet.isNsfw) throw new Error('flagged NSFW by server');
+    if (!jobSet.isCompleted) throw new Error(`job not completed (status: ${JSON.stringify((jobSet.jobs || []).map((j) => j.status))})`);
+    const url = resultUrl(jobSet);
+    if (!url) throw new Error('no result URL in completed job');
+    const bytes = await download(url, abs(s.outClip));
+    clearJob(s.id);
+    return bytes;
+  }
+
   let ok = 0;
   for (const s of shots) {
-    const img = abs(s.sourcePhoto);
-    if (!fs.existsSync(img)) {
-      console.error(`  ✗ ${s.id}: source photo missing: ${s.sourcePhoto}`);
-      process.exitCode = 1;
-      continue;
-    }
     try {
-      process.stdout.write(`  • ${s.id}: uploading… `);
-      const publicUrl = await uploadLocalImage(baseURL, c.key, c.secret, s.sourcePhoto);
-      process.stdout.write('generating… ');
-      const jobSet = await client.generate('/v1/image2video/dop', {
-        model,
-        prompt: s.higgsfield.prompt,
-        input_images: [sdk.InputImage.fromUrl(publicUrl)],
-      }, { withPolling: true });
-
-      if (typeof jobSet.isFailed === 'function' && jobSet.isFailed()) throw new Error('generation failed on server');
-      if (typeof jobSet.isNsfw === 'function' && jobSet.isNsfw()) throw new Error('flagged NSFW by server');
-      const url = resultUrl(jobSet);
-      if (!url) throw new Error('no result URL in completed job');
-
-      process.stdout.write('downloading… ');
-      const bytes = await download(url, abs(s.outClip));
+      let jobSet;
+      if (resume) {
+        const saved = loadJob(s.id);
+        if (!saved) { console.log(`  • ${s.id}: no saved job to resume — skipping (run without --resume to generate).`); continue; }
+        process.stdout.write(`  • ${s.id}: resuming job ${saved.jobSetId} · polling (up to ${maxPollMin}m)… `);
+        jobSet = new sdk.JobSet({ id: saved.jobSetId, jobs: [] });
+      } else {
+        const img = abs(s.sourcePhoto);
+        if (!fs.existsSync(img)) { console.error(`  ✗ ${s.id}: source photo missing: ${s.sourcePhoto}`); process.exitCode = 1; continue; }
+        process.stdout.write(`  • ${s.id}: uploading… `);
+        const publicUrl = await uploadLocalImage(baseURL, c.key, c.secret, s.sourcePhoto);
+        process.stdout.write('submitting… ');
+        jobSet = await client.generate('/v1/image2video/dop', {
+          model,
+          prompt: s.higgsfield.prompt,
+          input_images: [sdk.InputImage.fromUrl(publicUrl)],
+        }, { withPolling: false });
+        saveJob(s.id, jobSet.id);
+        process.stdout.write(`job ${jobSet.id} · rendering (up to ${maxPollMin}m)… `);
+      }
+      const bytes = await finishJob(s, jobSet);
       console.log(`done (${Math.round(bytes / 1024)} KB)`);
       ok += 1;
     } catch (err) {
@@ -190,6 +222,10 @@ async function main() {
       const name = err && err.constructor && err.constructor.name;
       console.error(`    ${name && name !== 'Error' ? name + ': ' : ''}${err.message}`);
       if (name === 'NotEnoughCreditsError') { console.error('    Out of Higgsfield credits — stopping.'); break; }
+      if (name === 'TimeoutError') {
+        console.error(`    Still rendering on Higgsfield — the job is saved. Resume WITHOUT re-charging:`);
+        console.error(`      node src/generate-clips.js --resume${only ? ` --only ${only}` : ''}`);
+      }
       process.exitCode = 1;
     }
   }
