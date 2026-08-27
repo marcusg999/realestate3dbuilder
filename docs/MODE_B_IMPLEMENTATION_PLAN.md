@@ -249,7 +249,7 @@ output/tour/
 |---|---|
 | `backends/tour/bake-nav-graph.js`: project floor plan into metric frame | M1 |
 | Sample nav nodes on floor surface (gravity-cast from ceiling-height down to floor mesh) | M1 collider |
-| Remove nodes inside walls (cast outward 8 directions, reject if all blocked within 0.15 m) | M1 collider |
+| Remove nodes inside walls (cast outward 8 directions, reject if ≥6 are blocked within 0.15 m) | M1 collider |
 | Connect adjacent nodes (Delaunay + line-of-sight filter) | Node set |
 | Map each node to a `roomId` from storyboard.json | Floor plan alignment |
 | Output `nav/graph.json` | All above |

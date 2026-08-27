@@ -119,15 +119,18 @@ module.exports = { build };
 ```
 SceneLoader.load(manifestPath)
   → fetch manifest.json
-  → load splat (progress events: 0–60%)
-  → load collider GLB (progress events: 60–90%)
-  → load nav graph JSON (progress events: 90–100%)
+  → parallel: load splat (large) + load collider GLB (small)
+  → sequential after both: load nav graph JSON (tiny)
   → emit 'ready' event
 ```
 
+Progress is weight-averaged across the three assets based on expected file size
+(splat ≈ 80% of total bytes, collider ≈ 19%, nav graph ≈ 1%). The UI progress
+bar shows a single 0–100% value derived from `(splatPct*0.80 + colliderPct*0.19 + graphPct*0.01)`.
+
 - Splat loaded via `@mkkellogg/gaussian-splats-3d` `KSplatLoader`
 - Collider loaded via `THREE.GLTFLoader`; set `mesh.visible = false`; added to scene for raycasting only
-- Both loads are parallel; progress is merged
+- Splat and collider loads run in parallel; nav graph load starts after both complete
 
 ### 3.2 Camera Controller (`CameraController.js`)
 
