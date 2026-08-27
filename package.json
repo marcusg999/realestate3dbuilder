@@ -12,6 +12,7 @@
     "storyboard": "node src/build-storyboard.js",
     "plan": "node src/build-shot-plan.js",
     "generate": "node src/generate-clips.js",
+    "generate:mcp": "node src/generate-clips-mcp.js",
     "assemble": "node src/assemble.js",
     "compare": "node src/compare-harness.js",
     "gauntlet:plan": "node src/gauntlet.js",
