@@ -76,9 +76,11 @@ Confirm the current shortlist at run time with
 `models_explore(action:'recommend', input:'image', type:'video', query:'…')` — model
 availability changes.
 
-## Why there is no `generate-clips-mcp.js` here
+## Why a standalone `generate-clips-mcp.js` can't work
 
-An earlier attempt at a standalone `src/generate-clips-mcp.js` tried to JSON‑RPC to
-a local MCP server URL. That can't work for the reason at the top — the session's
-Higgsfield MCP is not a local server. The supported paths are exactly two: the
-**local key-based** `src/generate-clips.js`, and this **agent-driven MCP** flow.
+The repo still carries an earlier attempt, `src/generate-clips-mcp.js`, that tries
+to JSON‑RPC to a local MCP server URL (`generate:mcp` in `package.json`). It does
+not work, for the reason at the top: the session's Higgsfield MCP is **not** a
+local server a Node process can dial. Don't use it. The supported paths are
+exactly two: the **local key-based** `src/generate-clips.js` (your key in `.env`),
+and this **agent-driven MCP** flow (Claude drives `generate_video` in a session).
