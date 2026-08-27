@@ -70,9 +70,11 @@ already exist, and stops on out-of-credits. The dashboard's **Generate clips
 (Higgsfield)** button runs the same thing.
 
 **Alternative — via the agent (Higgsfield MCP).** For every shot in
-`work/shot-plan.json`, call `generate_video` (image-to-video) with
-`spec.higgsfield`, save the result to `spec.outClip`. Batch with
-`generate_video_batch` + `jobs_wait`.
+`work/shot-plan.json`, the agent calls `generate_video` (image-to-video) with
+`spec.higgsfield`, saving the result to `spec.outClip`. Batch with
+`generate_video_batch` + `jobs_wait`. Full flow, the model pick, and why this
+can't be a standalone script: **`docs/HIGGSFIELD_MCP.md`**. (Photos must be a
+committed file or a public URL — a remote MCP can't read chat attachments.)
 
 **No key / preview only.** `npm run dev:clips` fills `work/clips/` with local
 ffmpeg test footage — no Higgsfield, no credits.

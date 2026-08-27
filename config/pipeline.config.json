@@ -34,8 +34,9 @@
     "fadeOutSec": 2.0
   },
   "higgsfield": {
-    "$comment": "Reference values only. Actual generation is invoked via the Higgsfield MCP tools by the orchestrating agent, not by a script. build-shot-plan.js emits one spec object per shot that maps directly onto generate_video inputs.",
-    "videoModelHint": "choose via models_explore(action:'recommend') at run time",
+    "$comment": "Reference values only. Two generation paths: local key-based src/generate-clips.js (uses dopModel), or agent-driven MCP (docs/HIGGSFIELD_MCP.md, uses mcpVideoModel). build-shot-plan.js emits one spec per shot that maps onto either.",
+    "videoModelHint": "cinematic_studio_video_v2 (fallback kling3_0); confirm via models_explore at run time",
+    "mcpVideoModel": "cinematic_studio_video_v2",
     "dopModel": "turbo",
     "maxPollMinutes": 25,
     "clipSeconds": 5,
