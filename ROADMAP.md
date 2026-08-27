@@ -80,5 +80,5 @@ The dashboard gains a mode selector; preflight grows mode-specific input checks
    clips via the agent → run the gauntlet).
 2. **Then:** kick off Mode B — define the render-backend interface, pick a
    reconstruction approach, build the WebGL viewer, add a 3D piece set to the
-   gauntlet.
+   gauntlet. **Planning docs:** [docs/MODE_B_IMPLEMENTATION_PLAN.md](docs/MODE_B_IMPLEMENTATION_PLAN.md), [docs/MODE_B_TECHNICAL_DESIGN.md](docs/MODE_B_TECHNICAL_DESIGN.md), [docs/MODE_B_TASK_CHECKLIST.md](docs/MODE_B_TASK_CHECKLIST.md).
 3. **Ship both** behind the shared dashboard with a mode selector.

@@ -8,6 +8,22 @@ walkthroughs.
 > **Mode B — Interactive 3D Tour** (Matterport-style) is planned behind the same
 > shared intake. See **[ROADMAP.md](ROADMAP.md)**.
 
+## Mode B status — Interactive 3D Tour
+
+| | |
+|---|---|
+| **Status** | Planning — implementation has not started |
+| **Goal** | Matterport-style navigable tour: click-to-move, free-look, dollhouse view, room measurement |
+| **Reconstruction** | COLMAP (metric poses) + 3D Gaussian Splatting (photoreal render) + lightweight mesh collider |
+| **Viewer** | Three.js / WebGL, self-contained static output at `output/tour/` |
+| **Milestones** | M0 Toolchain → M1 Reconstruction → M2 Nav graph → M3 Viewer → M4 Measurement → M5 Gauntlet → M6 Dashboard |
+
+Planning documents:
+
+- **[docs/MODE_B_IMPLEMENTATION_PLAN.md](docs/MODE_B_IMPLEMENTATION_PLAN.md)** — scope, acceptance criteria, architecture, reconstruction strategy, data contracts, milestone objectives, risks
+- **[docs/MODE_B_TECHNICAL_DESIGN.md](docs/MODE_B_TECHNICAL_DESIGN.md)** — module layout, render-backend interface, viewer subsystem design, performance targets, security notes
+- **[docs/MODE_B_TASK_CHECKLIST.md](docs/MODE_B_TASK_CHECKLIST.md)** — granular task checklist by milestone with effort estimates and critical-path notes
+
 This repo currently contains the **walkthrough-video generation step scaffold**:
 the full pipeline code and the builder/critic gauntlet harness, ready to run the
 moment real assets are dropped in. **No AI generation runs by itself** — clip
