@@ -12,8 +12,9 @@ inputs/matterport.url.txt
 inputs/storyboard.json
 !inputs/**/.gitkeep
 
-# Vendored ffmpeg / archives
+# Vendored ffmpeg / archives (local tool binaries — never commit)
 vendor/
+.bin/
 *.tar.xz
 
 # Secrets — never commit API keys
