@@ -38,6 +38,7 @@
     "videoModelHint": "cinematic_studio_video_v2 (fallback kling3_0); confirm via models_explore at run time",
     "mcpVideoModel": "cinematic_studio_video_v2",
     "dopModel": "turbo",
+    "concurrency": 3,
     "maxPollMinutes": 25,
     "clipSeconds": 5,
     "aspect": "16:9"

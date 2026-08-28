@@ -88,7 +88,12 @@ function stitchConcat(segments, cfg, outPath) {
 // ---- Stage 2b: xfade chain (mixed / timed transitions) ----
 function stitchXfade(segments, cfg, outPath) {
   const v = cfg.video;
-  const minFrame = 1 / v.fps; // hard cut approximated as ~1-frame xfade in the chain
+  // A hard cut inside an otherwise-timed xfade chain is done as a very short
+  // xfade. It must be at least a few frames long: a sub-frame duration
+  // (e.g. 1/fps) makes ffmpeg's xfade drop the second input and truncate the
+  // whole chain at that point. 0.1s reads as an instant cut but keeps the
+  // chain's timing correct.
+  const cutDur = Math.max(3 / v.fps, 0.1);
   const inputs = [];
   segments.forEach((s) => { inputs.push('-i', s.path); });
 
@@ -97,7 +102,7 @@ function stitchXfade(segments, cfg, outPath) {
   let cumulative = segments[0].dur;
   for (let i = 1; i < segments.length; i++) {
     const tr = resolveTransition(segments[i].transitionIn);
-    const d = tr.kind === 'cut' ? minFrame : tr.durationSec;
+    const d = tr.kind === 'cut' ? cutDur : tr.durationSec;
     const transition = tr.kind === 'cut' ? 'fade' : tr.transition;
     const offset = Math.max(0, cumulative - d);
     const out = i === segments.length - 1 ? 'outv' : `v${i}`;

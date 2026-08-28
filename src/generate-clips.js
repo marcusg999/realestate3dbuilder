@@ -19,6 +19,11 @@
 //   node src/generate-clips.js --only kitchen-island
 //   node src/generate-clips.js --dry-run    # print exactly what would be sent; NO API calls, NO credits
 //   node src/generate-clips.js --resume     # poll jobs already submitted (after a timeout) WITHOUT re-charging
+//   node src/generate-clips.js --concurrency 4   # how many clips to render at once (default: config higgsfield.concurrency, else 3)
+//
+// Batch runner: shots are processed by a pool of workers, so several clips
+// upload/render/download concurrently instead of strictly one at a time. The
+// dashboard's "Generate clips" button runs exactly this.
 //
 // Renders run on Higgsfield's servers and can take several minutes. Each shot is
 // submitted, its job id saved to work/jobs/, then polled up to
@@ -120,6 +125,8 @@ async function main() {
   const resume = args.includes('--resume');
   const onlyIdx = args.indexOf('--only');
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
+  const concIdx = args.indexOf('--concurrency');
+  const concArg = concIdx >= 0 ? parseInt(args[concIdx + 1], 10) : NaN;
 
   const cfg = loadConfig();
   const plan = loadPlan();
@@ -191,44 +198,61 @@ async function main() {
     return bytes;
   }
 
-  let ok = 0;
-  for (const s of shots) {
+  // Generate one shot end-to-end (upload -> submit -> poll -> download).
+  // Returns 'ok' | 'skip' | 'stop' (out of credits) | 'fail'.
+  async function processShot(s) {
     try {
       let jobSet;
       if (resume) {
         const saved = loadJob(s.id);
-        if (!saved) { console.log(`  • ${s.id}: no saved job to resume — skipping (run without --resume to generate).`); continue; }
-        process.stdout.write(`  • ${s.id}: resuming job ${saved.jobSetId} · polling (up to ${maxPollMin}m)… `);
+        if (!saved) { console.log(`  • ${s.id}: no saved job to resume — skipping.`); return 'skip'; }
+        console.log(`  • ${s.id}: resuming job ${saved.jobSetId} · polling (up to ${maxPollMin}m)…`);
         jobSet = new sdk.JobSet({ id: saved.jobSetId, jobs: [] });
       } else {
         const img = abs(s.sourcePhoto);
-        if (!fs.existsSync(img)) { console.error(`  ✗ ${s.id}: source photo missing: ${s.sourcePhoto}`); process.exitCode = 1; continue; }
-        process.stdout.write(`  • ${s.id}: uploading… `);
+        if (!fs.existsSync(img)) { console.error(`  ✗ ${s.id}: source photo missing: ${s.sourcePhoto}`); return 'fail'; }
+        console.log(`  • ${s.id}: uploading + submitting…`);
         const publicUrl = await uploadLocalImage(baseURL, c.key, c.secret, s.sourcePhoto);
-        process.stdout.write('submitting… ');
         jobSet = await client.generate('/v1/image2video/dop', {
           model,
           prompt: s.higgsfield.prompt,
           input_images: [sdk.InputImage.fromUrl(publicUrl)],
         }, { withPolling: false });
         saveJob(s.id, jobSet.id);
-        process.stdout.write(`job ${jobSet.id} · rendering (up to ${maxPollMin}m)… `);
+        console.log(`  • ${s.id}: job ${jobSet.id} · rendering (up to ${maxPollMin}m)…`);
       }
       const bytes = await finishJob(s, jobSet);
-      console.log(`done (${Math.round(bytes / 1024)} KB)`);
-      ok += 1;
+      console.log(`  ✓ ${s.id}: done (${Math.round(bytes / 1024)} KB)`);
+      return 'ok';
     } catch (err) {
-      console.log('FAILED');
       const name = err && err.constructor && err.constructor.name;
-      console.error(`    ${name && name !== 'Error' ? name + ': ' : ''}${err.message}`);
-      if (name === 'NotEnoughCreditsError') { console.error('    Out of Higgsfield credits — stopping.'); break; }
+      console.error(`  ✗ ${s.id}: FAILED — ${name && name !== 'Error' ? name + ': ' : ''}${err.message}`);
+      if (name === 'NotEnoughCreditsError') { console.error('    Out of Higgsfield credits — stopping.'); return 'stop'; }
       if (name === 'TimeoutError') {
         console.error(`    Still rendering on Higgsfield — the job is saved. Resume WITHOUT re-charging:`);
-        console.error(`      node src/generate-clips.js --resume${only ? ` --only ${only}` : ''}`);
+        console.error(`      node src/generate-clips.js --resume`);
       }
       process.exitCode = 1;
+      return 'fail';
     }
   }
+
+  // Batch runner: a pool of N workers pulls from the shot queue, so several
+  // clips upload/render/download at once instead of strictly one at a time.
+  // Concurrency: --concurrency N > config higgsfield.concurrency > 3.
+  const concurrency = Math.max(1, Number.isFinite(concArg) ? concArg : (cfg.higgsfield?.concurrency ?? 3));
+  const queue = shots.slice();
+  let ok = 0, stopped = false;
+  const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+    while (queue.length && !stopped) {
+      const s = queue.shift();
+      const r = await processShot(s);
+      if (r === 'ok') ok += 1;
+      if (r === 'stop') { stopped = true; }
+    }
+  });
+  console.log(`Generating ${shots.length} clip(s), ${Math.min(concurrency, shots.length)} at a time…\n`);
+  await Promise.all(workers);
 
   if (typeof client.close === 'function') { try { client.close(); } catch { /* noop */ } }
   console.log(`\n${ok}/${shots.length} clip(s) generated.` + (ok ? '  Next: node src/assemble.js' : ''));
