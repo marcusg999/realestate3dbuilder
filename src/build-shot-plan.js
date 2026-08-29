@@ -79,6 +79,9 @@ function build(storyboardPath) {
     propertySize: sb.propertySize,
     brand: sb.brand || null,
     musicBed: sb.musicBed || null,
+    // Per-property closing card (agent / price / address). Rendered as the
+    // final ~5s of the assembled video; changes with every listing.
+    endCard: sb.endCard || null,
     shots: sb.shots.map((s) => buildSpec(s, cfg)),
   };
   return plan;

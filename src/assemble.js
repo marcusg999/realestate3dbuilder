@@ -32,6 +32,29 @@ function loadShotPlan(planPath) {
 }
 
 // ---- Stage 1: build one normalized segment per shot ----
+// Deterministic de-shake with ffmpeg vid.stab (two passes). Removes the
+// residual jitter AI image-to-video leaves in, regardless of the prompt. Auto-
+// zoom hides the stabilization borders so there are no black edges. Returns the
+// stabilized clip path (or the original if stabilization is disabled).
+function stabilizeClip(clip, id, cfg) {
+  const s = cfg.stabilize;
+  if (!s || s.enabled === false) return clip;
+  const v = cfg.video;
+  const dir = abs('work/stab');
+  fs.mkdirSync(dir, { recursive: true });
+  const trf = path.join(dir, `${id}.trf`);
+  const out = path.join(dir, `${id}.mp4`);
+  // Pass 1: analyze motion.
+  ffmpeg(['-y', '-i', clip, '-vf',
+    `vidstabdetect=shakiness=${s.shakiness ?? 8}:accuracy=${s.accuracy ?? 15}:result=${trf}`,
+    '-f', 'null', '-']);
+  // Pass 2: apply smoothing (+ light unsharp to recover softness from the zoom).
+  ffmpeg(['-y', '-i', clip, '-vf',
+    `vidstabtransform=input=${trf}:smoothing=${s.smoothing ?? 24}:optzoom=1:zoom=0:crop=black,unsharp=5:5:0.6:3:3:0.3`,
+    '-an', '-c:v', v.codec, '-crf', String(v.crf), '-preset', v.preset, '-pix_fmt', v.pixFmt, out]);
+  return out;
+}
+
 function buildSegment(shot, cfg, opts) {
   const v = cfg.video;
   const clip = abs(shot.outClip);
@@ -40,6 +63,8 @@ function buildSegment(shot, cfg, opts) {
   const segDir = abs('work/graded');
   fs.mkdirSync(segDir, { recursive: true });
   const segPath = path.join(segDir, `${shot.id}.mp4`);
+
+  const src = stabilizeClip(clip, shot.id, cfg);
 
   const vf = [
     `scale=${v.width}:${v.height}:force_original_aspect_ratio=decrease`,
@@ -52,8 +77,9 @@ function buildSegment(shot, cfg, opts) {
   const colorParams = (opts.colorByShot && opts.colorByShot[shot.id]) || null;
   if (colorParams) vf.push(normalizeFilter(colorParams));
 
-  // Caption knob
-  if (shot.caption && shot.caption.text && shot.caption.style !== 'none') {
+  // Per-room captions are OFF by default (config.drawRoomCaptions). The only
+  // on-screen text is the closing end card.
+  if (cfg.drawRoomCaptions && shot.caption && shot.caption.text && shot.caption.style !== 'none') {
     const capCfg = pieceParams('captions');
     const dt = drawtext({
       text: shot.caption.text,
@@ -67,7 +93,7 @@ function buildSegment(shot, cfg, opts) {
   }
 
   const args = [
-    '-y', '-i', clip,
+    '-y', '-i', src,
     '-t', String(shot.durationSec),
     '-vf', vf.join(','),
     '-an',
@@ -76,6 +102,44 @@ function buildSegment(shot, cfg, opts) {
   ];
   ffmpeg(args);
   return { id: shot.id, path: segPath, dur: shot.durationSec, transitionIn: shot.transitionIn };
+}
+
+// Closing end card: a branded slate with the listing agent / price / address.
+// Text is written to files and referenced via drawtext textfile= so commas,
+// apostrophes and $ need no escaping. Rendered as its own segment.
+function buildEndCard(endCard, cfg) {
+  const v = cfg.video;
+  const dur = endCard.durationSec ?? 5;
+  const bg = endCard.bg || (cfg.brand && cfg.brand.primaryColor) || '#0b0e13';
+  const font = cfg.captionFont;
+  const dir = abs('work/graded');
+  fs.mkdirSync(dir, { recursive: true });
+
+  const agentLine = endCard.agent
+    ? `${endCard.agent}${endCard.phone ? '   •   Contact: ' + endCard.phone : ''}`
+    : (endCard.lines && endCard.lines[0]) || '';
+  const price = endCard.price || (endCard.lines && endCard.lines[1]) || '';
+  const address = endCard.address || (endCard.lines && endCard.lines[2]) || '';
+
+  const write = (name, text) => { const p = path.join(dir, name); fs.writeFileSync(p, String(text)); return p; };
+  const fAgent = write('__ec_agent.txt', agentLine);
+  const fPrice = write('__ec_price.txt', price);
+  const fAddr = write('__ec_addr.txt', address);
+
+  const dt = [
+    // price is the hero line, dead center
+    `drawtext=fontfile=${font}:textfile=${fPrice}:fontcolor=white:fontsize=104:x=(w-tw)/2:y=(h-th)/2`,
+    // agent + phone above it
+    `drawtext=fontfile=${font}:textfile=${fAgent}:fontcolor=0xF2F2F2:fontsize=46:x=(w-tw)/2:y=h/2-120`,
+    // address below it
+    `drawtext=fontfile=${font}:textfile=${fAddr}:fontcolor=0xB9C0CC:fontsize=40:x=(w-tw)/2:y=h/2+96`,
+    'fade=t=in:st=0:d=0.6',
+  ].join(',');
+
+  const seg = path.join(dir, '__endcard.mp4');
+  ffmpeg(['-y', '-f', 'lavfi', '-i', `color=c=${bg}:s=${v.width}x${v.height}:d=${dur}:r=${v.fps}`,
+    '-vf', dt, '-an', '-c:v', v.codec, '-crf', String(v.crf), '-preset', v.preset, '-pix_fmt', v.pixFmt, seg]);
+  return { id: '__endcard', path: seg, dur, transitionIn: { type: 'dissolve', durationSec: 0.6 } };
 }
 
 // ---- Stage 2a: concat (all hard cuts) ----
@@ -163,7 +227,12 @@ function assemble(opts = {}) {
   }
 
   // Stage 1
+  cfg.brand = plan.brand || cfg.brand; // let the end card read the brand color
   const segments = shots.map((s) => buildSegment(s, cfg, opts));
+
+  // Closing end card (agent / price / address), if the listing provides one.
+  const endCard = opts.endCard || plan.endCard;
+  if (endCard) segments.push(buildEndCard(endCard, cfg));
 
   // Stage 2
   fs.mkdirSync(abs(cfg.paths.output), { recursive: true });

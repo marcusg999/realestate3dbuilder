@@ -3,6 +3,14 @@
   "ffmpegBin": null,
   "ffprobeBin": null,
   "captionFont": "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+  "drawRoomCaptions": false,
+  "stabilize": {
+    "$comment": "Deterministic de-shake (ffmpeg vid.stab) applied to every clip before assembly. Higher smoothing = steadier but crops/zooms a touch more. Set enabled=false to skip.",
+    "enabled": true,
+    "shakiness": 8,
+    "accuracy": 15,
+    "smoothing": 24
+  },
   "paths": {
     "referenceFrames": "inputs/reference-frames",
     "listingPhotos": "inputs/listing-photos",
