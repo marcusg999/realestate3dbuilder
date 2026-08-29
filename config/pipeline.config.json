@@ -7,9 +7,9 @@
   "stabilize": {
     "$comment": "Deterministic de-shake (ffmpeg vid.stab) applied to every clip before assembly. Higher smoothing = steadier but crops/zooms a touch more. Set enabled=false to skip.",
     "enabled": true,
-    "shakiness": 8,
+    "shakiness": 10,
     "accuracy": 15,
-    "smoothing": 24
+    "smoothing": 60
   },
   "paths": {
     "referenceFrames": "inputs/reference-frames",

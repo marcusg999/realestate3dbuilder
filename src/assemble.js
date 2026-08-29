@@ -126,17 +126,42 @@ function buildEndCard(endCard, cfg) {
   const fPrice = write('__ec_price.txt', price);
   const fAddr = write('__ec_addr.txt', address);
 
+  // Background image of the home. Falls back to a flat brand slate if none.
+  const homeImg = endCard.image && fs.existsSync(abs(endCard.image)) ? abs(endCard.image) : null;
+  const P = { w: 1240, h: 480, x: (v.width - 1240) / 2, y: (v.height - 480) / 2 - 12, r: 44 };
+  const f = (n) => path.join(dir, n);
+
+  if (homeImg) {
+    // Frosted-glass card over a photo of the home (multi-pass ffmpeg).
+    ffmpeg(['-y', '-i', homeImg, '-vf', `scale=${v.width}:${v.height}:force_original_aspect_ratio=increase,crop=${v.width}:${v.height},eq=brightness=-0.05:saturation=1.06`, '-frames:v', '1', f('__ec_bg.png')]);
+    ffmpeg(['-y', '-i', f('__ec_bg.png'), '-vf', 'gblur=sigma=30,eq=brightness=0.05', '-frames:v', '1', f('__ec_blur.png')]);
+    ffmpeg(['-y', '-i', f('__ec_blur.png'), '-vf', `crop=${P.w}:${P.h}:${P.x}:${P.y}`, '-frames:v', '1', f('__ec_crop.png')]);
+    ffmpeg(['-y', '-i', f('__ec_crop.png'), '-f', 'lavfi', '-i', `color=white:s=${P.w}x${P.h}`, '-filter_complex', '[1]format=rgba,colorchannelmixer=aa=0.55[w];[0][w]overlay,format=rgb24', '-frames:v', '1', f('__ec_tint.png')]);
+    ffmpeg(['-y', '-f', 'lavfi', '-i', `color=black:s=${P.w}x${P.h}`, '-vf', `format=gray,geq=lum='236*lte(hypot(X-clip(X,${P.r},${P.w - P.r}),Y-clip(Y,${P.r},${P.h - P.r})),${P.r})'`, '-frames:v', '1', f('__ec_mask.png')]);
+    ffmpeg(['-y', '-i', f('__ec_tint.png'), '-i', f('__ec_mask.png'), '-filter_complex', '[0][1]alphamerge', '-frames:v', '1', f('__ec_panel.png')]);
+    ffmpeg(['-y', '-i', f('__ec_mask.png'), '-vf', 'gblur=sigma=18', '-frames:v', '1', f('__ec_smask.png')]);
+    ffmpeg(['-y', '-f', 'lavfi', '-i', `color=black:s=${P.w}x${P.h}`, '-i', f('__ec_smask.png'), '-filter_complex', '[0][1]alphamerge,format=rgba,colorchannelmixer=aa=0.45', '-frames:v', '1', f('__ec_shadow.png')]);
+    ffmpeg(['-y', '-i', f('__ec_bg.png'), '-i', f('__ec_shadow.png'), '-i', f('__ec_panel.png'), '-filter_complex', `[0][1]overlay=${P.x}:${P.y + 12}[a];[a][2]overlay=${P.x}:${P.y}[b]`, '-map', '[b]', '-frames:v', '1', f('__ec_comp.png')]);
+    const dt = [
+      `drawtext=fontfile=${font}:textfile=${fPrice}:fontcolor=0x0e1116:fontsize=100:x=(w-tw)/2:y=(h-th)/2`,
+      `drawtext=fontfile=${font}:textfile=${fAgent}:fontcolor=0x1c2530:fontsize=44:x=(w-tw)/2:y=h/2-132`,
+      `drawtext=fontfile=${font}:textfile=${fAddr}:fontcolor=0x33404f:fontsize=38:x=(w-tw)/2:y=h/2+98`,
+      'fade=t=in:st=0:d=0.6',
+    ].join(',');
+    const seg = f('__endcard.mp4');
+    ffmpeg(['-y', '-loop', '1', '-t', String(dur), '-i', f('__ec_comp.png'), '-vf', `${dt},fps=${v.fps},format=${v.pixFmt}`,
+      '-an', '-c:v', v.codec, '-crf', String(v.crf), '-preset', v.preset, seg]);
+    return { id: '__endcard', path: seg, dur, transitionIn: { type: 'dissolve', durationSec: 0.6 } };
+  }
+
+  // Fallback: flat brand slate with white text (no home image available).
   const dt = [
-    // price is the hero line, dead center
     `drawtext=fontfile=${font}:textfile=${fPrice}:fontcolor=white:fontsize=104:x=(w-tw)/2:y=(h-th)/2`,
-    // agent + phone above it
     `drawtext=fontfile=${font}:textfile=${fAgent}:fontcolor=0xF2F2F2:fontsize=46:x=(w-tw)/2:y=h/2-120`,
-    // address below it
     `drawtext=fontfile=${font}:textfile=${fAddr}:fontcolor=0xB9C0CC:fontsize=40:x=(w-tw)/2:y=h/2+96`,
     'fade=t=in:st=0:d=0.6',
   ].join(',');
-
-  const seg = path.join(dir, '__endcard.mp4');
+  const seg = f('__endcard.mp4');
   ffmpeg(['-y', '-f', 'lavfi', '-i', `color=c=${bg}:s=${v.width}x${v.height}:d=${dur}:r=${v.fps}`,
     '-vf', dt, '-an', '-c:v', v.codec, '-crf', String(v.crf), '-preset', v.preset, '-pix_fmt', v.pixFmt, seg]);
   return { id: '__endcard', path: seg, dur, transitionIn: { type: 'dissolve', durationSec: 0.6 } };
@@ -231,8 +256,12 @@ function assemble(opts = {}) {
   const segments = shots.map((s) => buildSegment(s, cfg, opts));
 
   // Closing end card (agent / price / address), if the listing provides one.
+  // Default its background to the opening/hero photo of the home.
   const endCard = opts.endCard || plan.endCard;
-  if (endCard) segments.push(buildEndCard(endCard, cfg));
+  if (endCard) {
+    if (!endCard.image && shots.length) endCard.image = shots[0].sourcePhoto;
+    segments.push(buildEndCard(endCard, cfg));
+  }
 
   // Stage 2
   fs.mkdirSync(abs(cfg.paths.output), { recursive: true });
