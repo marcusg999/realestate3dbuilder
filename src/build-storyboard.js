@@ -17,19 +17,21 @@ const { ROOT, abs, loadConfig } = require('./lib/config');
 const IMAGE_RE = /\.(jpe?g|png|webp)$/i;
 
 // filename keyword -> { motion, hero, room-ish }. First match wins; order matters.
+// Bias toward DYNAMIC lateral moves (truck / orbit / reveal) over plain
+// forward pushes — a sideways sweep reads as 3D and shows more of each room.
 const RULES = [
-  { re: /(exterior|facade|front|aerial|drone|elevation|curb)/i, motion: 'push_in', hero: true },
+  { re: /(exterior|facade|front|aerial|drone|elevation|curb)/i, motion: 'truck_right', hero: true },
   { re: /(dusk|twilight|night|rear|back|yard|pool|patio|deck)/i, motion: 'pull_back', hero: true },
   { re: /(foyer|entry|entrance|hall|corridor|stair)/i, motion: 'reveal', hero: false },
-  { re: /(kitchen|pantry)/i, motion: 'dolly_in', hero: true },
+  { re: /(kitchen|pantry)/i, motion: 'truck_left', hero: true },
   { re: /(living|great|family|lounge|den)/i, motion: 'orbit_left', hero: true },
   { re: /(dining)/i, motion: 'orbit_right', hero: false },
-  { re: /(primary|master|suite)/i, motion: 'orbit_right', hero: true },
-  { re: /(bed)/i, motion: 'track_forward', hero: false },
-  { re: /(bath|ensuite|powder|spa|shower)/i, motion: 'track_forward', hero: false },
-  { re: /(office|study|library|gym|theater|theatre|media|bar|wine|laundry|mud)/i, motion: 'dolly_in', hero: false },
+  { re: /(primary|master|suite)/i, motion: 'truck_right', hero: true },
+  { re: /(bed)/i, motion: 'truck_left', hero: false },
+  { re: /(bath|ensuite|powder|spa|shower)/i, motion: 'reveal', hero: false },
+  { re: /(office|study|library|gym|theater|theatre|media|bar|wine|laundry|mud)/i, motion: 'orbit_right', hero: false },
 ];
-const CYCLE = ['dolly_in', 'orbit_left', 'push_in', 'track_forward', 'orbit_right', 'reveal'];
+const CYCLE = ['truck_left', 'orbit_left', 'truck_right', 'reveal', 'orbit_right', 'dolly_in'];
 
 function baseName(file) { return file.replace(IMAGE_RE, ''); }
 
@@ -71,9 +73,11 @@ function build({ size = 'midHome', photosDir } = {}) {
 
     const first = i === 0;
     const last = i === files.length - 1;
+    // Smooth room-to-room transitions: longer crossfades, no hard cuts mid-tour.
+    // Alternate a soft directional wipe with a dissolve so it flows, not chops.
     const transitionIn = first
       ? { type: 'hard_cut', durationSec: 0 }
-      : (i % 2 === 0 ? { type: 'through_doorway_match', durationSec: 0.4 } : { type: 'dissolve', durationSec: 0.35 });
+      : (i % 2 === 0 ? { type: 'through_doorway_match', durationSec: 0.7 } : { type: 'dissolve', durationSec: 0.6 });
 
     return {
       id,
