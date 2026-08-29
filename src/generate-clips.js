@@ -23,7 +23,10 @@
 //
 // Batch runner: shots are processed by a pool of workers, so several clips
 // upload/render/download concurrently instead of strictly one at a time. The
-// dashboard's "Generate clips" button runs exactly this.
+// pool self-throttles to higgsfield.maxConcurrent (the provider's per-account
+// cap) and, if a submission is still rate-limited, re-queues that shot with
+// backoff rather than failing it — so a whole property runs from one click /
+// one button press. The dashboard's "Generate clips" button runs exactly this.
 //
 // Renders run on Higgsfield's servers and can take several minutes. Each shot is
 // submitted, its job id saved to work/jobs/, then polled up to
@@ -226,8 +229,18 @@ async function main() {
       return 'ok';
     } catch (err) {
       const name = err && err.constructor && err.constructor.name;
+      if (name === 'NotEnoughCreditsError') {
+        console.error(`  ✗ ${s.id}: FAILED — Out of Higgsfield credits — stopping.`);
+        return 'stop';
+      }
+      // Provider caps how many renders run at once (e.g. "max 4 concurrent
+      // job(s)"). That's not a real failure — the shot just needs to wait for a
+      // slot. Re-queue it with backoff instead of dropping it.
+      if (/rate limit|concurren|too many|429/i.test(String(err.message))) {
+        console.log(`  • ${s.id}: waiting for a free render slot (provider concurrency limit)…`);
+        return 'retry';
+      }
       console.error(`  ✗ ${s.id}: FAILED — ${name && name !== 'Error' ? name + ': ' : ''}${err.message}`);
-      if (name === 'NotEnoughCreditsError') { console.error('    Out of Higgsfield credits — stopping.'); return 'stop'; }
       if (name === 'TimeoutError') {
         console.error(`    Still rendering on Higgsfield — the job is saved. Resume WITHOUT re-charging:`);
         console.error(`      node src/generate-clips.js --resume`);
@@ -239,19 +252,34 @@ async function main() {
 
   // Batch runner: a pool of N workers pulls from the shot queue, so several
   // clips upload/render/download at once instead of strictly one at a time.
-  // Concurrency: --concurrency N > config higgsfield.concurrency > 3.
-  const concurrency = Math.max(1, Number.isFinite(concArg) ? concArg : (cfg.higgsfield?.concurrency ?? 3));
+  // Concurrency: --concurrency N > config higgsfield.concurrency > 3, clamped to
+  // higgsfield.maxConcurrent (the provider's per-account cap, default 4) so the
+  // pool self-throttles into groups instead of getting submissions rejected.
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const maxConcurrent = Math.max(1, cfg.higgsfield?.maxConcurrent ?? 4);
+  const requested = Math.max(1, Number.isFinite(concArg) ? concArg : (cfg.higgsfield?.concurrency ?? 3));
+  const concurrency = Math.min(requested, maxConcurrent);
+  if (requested > maxConcurrent) console.log(`Concurrency ${requested} clamped to ${maxConcurrent} (provider cap).`);
+
   const queue = shots.slice();
+  const attempts = new Map();
+  const MAX_RETRIES = 12;
   let ok = 0, stopped = false;
   const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
     while (queue.length && !stopped) {
       const s = queue.shift();
       const r = await processShot(s);
       if (r === 'ok') ok += 1;
-      if (r === 'stop') { stopped = true; }
+      else if (r === 'stop') { stopped = true; }
+      else if (r === 'retry') {
+        const n = (attempts.get(s.id) || 0) + 1;
+        attempts.set(s.id, n);
+        if (n > MAX_RETRIES) { console.error(`  ✗ ${s.id}: still rate-limited after ${MAX_RETRIES} tries — giving up.`); process.exitCode = 1; }
+        else { queue.push(s); await sleep(Math.min(30000, 3000 * n)); } // back-of-queue + linear backoff
+      }
     }
   });
-  console.log(`Generating ${shots.length} clip(s), ${Math.min(concurrency, shots.length)} at a time…\n`);
+  console.log(`Generating ${shots.length} clip(s), ${concurrency} at a time (auto-throttled to the provider cap)…\n`);
   await Promise.all(workers);
 
   if (typeof client.close === 'function') { try { client.close(); } catch { /* noop */ } }

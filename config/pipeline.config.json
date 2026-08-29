@@ -39,6 +39,7 @@
     "mcpVideoModel": "cinematic_studio_video_v2",
     "dopModel": "turbo",
     "concurrency": 3,
+    "maxConcurrent": 4,
     "mcpVideoModelParams": {
       "$comment": "Passed to the MCP generate_video (Cinema Studio v2) for steadier, more dynamic motion. speedramp=linear keeps constant velocity (no lurching); higher cfg_scale makes it obey the 'no shake' + lateral-move prompt more strictly; sound off (music added at assembly).",
       "mode": "std",
