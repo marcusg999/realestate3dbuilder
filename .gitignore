@@ -26,3 +26,8 @@ npm-debug.log*
 
 # OS
 .DS_Store
+
+# Publish the assembled walkthrough (small web copy) so it is viewable on the branch
+!output/
+output/*
+!output/walkthrough.mp4
