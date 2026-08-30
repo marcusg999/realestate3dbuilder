@@ -17,18 +17,19 @@ const { ROOT, abs, loadConfig } = require('./lib/config');
 // Every line describes a fluid, motorized-dolly / gimbal move; the shared
 // stabilization clause in buildSpec enforces "no shake".
 const MOTION_PROMPT = {
-  dolly_in: 'the camera glides forward into the room on a motorized dolly while drifting gently to one side, revealing depth, constant slow speed',
-  dolly_out: 'the camera glides smoothly backward on a motorized dolly, easing to one side to open up the space, constant slow speed',
-  push_in: 'the camera pushes in slowly toward the hero feature while trucking a touch sideways, parallax revealing the room in three dimensions',
-  pull_back: 'the camera pulls back smoothly and arcs slightly to the side, gradually revealing the full space',
-  orbit_left: 'the camera arcs left in a slow, wide semicircle around the room, sweeping laterally past foreground into depth, level horizon',
-  orbit_right: 'the camera arcs right in a slow, wide semicircle around the room, sweeping laterally past foreground into depth, level horizon',
-  truck_left: 'the camera trucks smoothly to the left, sliding sideways across the room to sweep the space, level horizon',
-  truck_right: 'the camera trucks smoothly to the right, sliding sideways across the room to sweep the space, level horizon',
-  crane_up: 'the camera cranes up smoothly while drifting forward, revealing ceiling height, verticals true',
-  crane_down: 'the camera cranes down smoothly to eye level while easing sideways, verticals true',
-  reveal: 'the camera slides laterally through the doorway and arcs into the space, a smooth reveal with strong parallax',
-  track_forward: 'the camera tracks forward down the room on rails while gently weaving side to side, fluid Steadicam glide',
+  dolly_in: 'flies slowly and smoothly forward, gliding deeper into the space',
+  dolly_out: 'drifts slowly and smoothly backward, opening up the space',
+  push_in: 'pushes in slowly and smoothly toward the focal point',
+  pull_back: 'drifts slowly backward and eases slightly to one side, smoothly revealing the full space',
+  orbit_left: 'arcs slowly to the left in a smooth, wide sweep around the space, level horizon',
+  orbit_right: 'arcs slowly to the right in a smooth, wide sweep around the space, level horizon',
+  truck_left: 'glides smoothly sideways to the left across the space, level horizon',
+  truck_right: 'glides smoothly sideways to the right across the space, level horizon',
+  crane_up: 'cranes up smoothly while drifting forward, revealing the height of the space, verticals true',
+  crane_down: 'cranes down smoothly to eye level while easing forward, verticals true',
+  // Arrival shot: a forward push that ENDS at the front door / threshold.
+  reveal: 'flies slowly forward up the walkway and arrives right at the front door, a smooth gliding forward push that ends at the threshold, moving forward the whole time',
+  track_forward: 'tracks slowly and smoothly forward through the space, a fluid gliding move',
 };
 
 function buildSpec(shot, cfg) {
@@ -39,13 +40,13 @@ function buildSpec(shot, cfg) {
   const cameraLine = MOTION_PROMPT[motionPreset] || MOTION_PROMPT.dolly_in;
 
   const prompt = [
-    'Professional real-estate walkthrough of a luxury home.',
-    cameraLine + '.',
+    // Framed as a professional drone/gimbal shot — this is what makes Kling
+    // produce smooth, floating, drone-like motion instead of handheld wobble.
+    'Cinematic aerial drone shot of a luxury home, filmed on a professional gimbal drone.',
+    'The camera ' + cameraLine + '.',
     composition ? composition + '.' : '',
-    // Stabilization + realism clause on EVERY shot. The camera-shake and
-    // warping language here is deliberate and load-bearing — keep it.
-    'Locked-off gimbal on a fluid motorized dolly: perfectly smooth, stabilized motion, rock steady, absolutely no camera shake, no handheld jitter, no wobble, constant velocity with gentle ease-in and ease-out.',
-    'Photorealistic, natural interior lighting, no people, no warping, straight lines stay straight, walls and furniture do not bend, cinematic and restrained.',
+    'Ultra-stabilized and floating, absolutely smooth with zero camera shake or wobble, constant slow velocity, gentle ease-in and ease-out.',
+    'Photorealistic, natural lighting, no people, no warping, straight lines stay straight, walls and furniture do not bend, cinematic and restrained.',
   ].filter(Boolean).join(' ');
 
   return {
