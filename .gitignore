@@ -12,8 +12,9 @@ inputs/matterport.url.txt
 inputs/storyboard.json
 !inputs/**/.gitkeep
 
-# Vendored ffmpeg / archives
+# Vendored ffmpeg / archives (local tool binaries — never commit)
 vendor/
+.bin/
 *.tar.xz
 
 # Secrets — never commit API keys
@@ -25,3 +26,8 @@ npm-debug.log*
 
 # OS
 .DS_Store
+
+# Publish the assembled walkthrough (small web copy) so it is viewable on the branch
+!output/
+output/*
+!output/walkthrough.mp4

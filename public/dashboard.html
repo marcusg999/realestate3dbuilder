@@ -102,7 +102,7 @@
       <span class="status" id="runStatus"></span>
     </div>
     <p id="hfKey" class="muted" style="font-size:12px;margin:8px 0 0"></p>
-    <p class="muted" style="font-size:12px;margin:4px 0 0">Generate calls the Higgsfield API directly with your key and <strong>spends credits</strong>; it can take a few minutes for several rooms. Set your key in a local <span class="mono">.env</span> (see docs/HIGGSFIELD_SETUP.md), then restart the dashboard.</p>
+    <p class="muted" style="font-size:12px;margin:4px 0 0">Generate calls the Higgsfield API directly with your key and <strong>spends credits</strong>; it renders in <strong>auto-throttled groups</strong> (a few rooms at a time, capped to the provider's concurrency limit) so a whole property runs from one click. Set your key in a local <span class="mono">.env</span> (see docs/HIGGSFIELD_SETUP.md), then restart the dashboard.</p>
     <div class="row" style="margin-top:10px">
       <button id="run-devclips" class="ghost" title="Local ffmpeg test footage — not Higgsfield, no credits">Generate placeholder clips (test)</button>
       <span class="muted" style="font-size:12px">No key / no credits — fills <span class="mono">work/clips/</span> with local test footage to preview the pipeline.</span>

@@ -3,6 +3,14 @@
   "ffmpegBin": null,
   "ffprobeBin": null,
   "captionFont": "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+  "drawRoomCaptions": false,
+  "stabilize": {
+    "$comment": "Deterministic de-shake (ffmpeg vid.stab) applied to every clip before assembly. Higher smoothing = steadier but crops/zooms a touch more. Set enabled=false to skip.",
+    "enabled": false,
+    "shakiness": 10,
+    "accuracy": 15,
+    "smoothing": 60
+  },
   "paths": {
     "referenceFrames": "inputs/reference-frames",
     "listingPhotos": "inputs/listing-photos",
@@ -34,9 +42,18 @@
     "fadeOutSec": 2.0
   },
   "higgsfield": {
-    "$comment": "Reference values only. Actual generation is invoked via the Higgsfield MCP tools by the orchestrating agent, not by a script. build-shot-plan.js emits one spec object per shot that maps directly onto generate_video inputs.",
-    "videoModelHint": "choose via models_explore(action:'recommend') at run time",
+    "$comment": "Reference values only. Two generation paths: local key-based src/generate-clips.js (uses dopModel), or agent-driven MCP (docs/HIGGSFIELD_MCP.md, uses mcpVideoModel). build-shot-plan.js emits one spec per shot that maps onto either.",
+    "videoModelHint": "kling3_0 mode=pro — chosen for genuinely smooth, drone-like motion (Cinema Studio v2 shook); confirm via models_explore at run time",
+    "mcpVideoModel": "kling3_0",
     "dopModel": "turbo",
+    "concurrency": 3,
+    "maxConcurrent": 4,
+    "mcpVideoModelParams": {
+      "$comment": "Passed to the MCP generate_video for Kling v3.0. pro mode = smoothest/highest-quality motion; sound off (music added at assembly).",
+      "mode": "pro",
+      "sound": "off"
+    },
+    "maxPollMinutes": 25,
     "clipSeconds": 5,
     "aspect": "16:9"
   }
